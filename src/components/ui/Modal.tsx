@@ -59,38 +59,40 @@ export default function Modal({
       ref={dialogRef}
       onClose={handleClose}
       onCancel={handleCancel}
-      className="backdrop:bg-black/50 p-0 rounded-xl shadow-2xl w-full max-w-md overflow-hidden m-auto"
+      className="backdrop:bg-slate-900/40 backdrop-blur-sm p-0 rounded-[2rem] shadow-2xl w-full max-w-[480px] overflow-hidden m-auto border border-slate-100/50 animate-in fade-in zoom-in-95 duration-200"
     >
       <div className="bg-white">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+        <div className="px-8 pt-8 pb-4 flex justify-between items-start">
+          <h3 className="text-xl font-black text-slate-900 tracking-tight">{title}</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 -mt-2 -mr-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 text-gray-700 leading-relaxed">
+        <div className="px-8 py-4 text-slate-600 leading-relaxed">
           {children}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            {cancelText}
-          </button>
+        <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
+          {cancelText && (
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 text-sm font-bold text-slate-600 bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+            >
+              {cancelText}
+            </button>
+          )}
           <button
             onClick={handleConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            className="px-6 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all shadow-md hover:shadow-lg active:translate-y-0.5"
           >
             {confirmText}
           </button>

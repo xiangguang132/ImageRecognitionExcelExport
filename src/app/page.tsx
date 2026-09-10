@@ -106,40 +106,70 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
+      {/* 背景装饰 */}
+      <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-50/50 blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-50/50 blur-[100px]" />
+        <div className="absolute top-[40%] left-[40%] w-[20%] h-[20%] rounded-full bg-purple-50/50 blur-[100px]" />
+      </div>
+
       {/* 头部 */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-800">
-            📋 学生证信息管理平台
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            上传学生证图片 → OCR 识别 → 确认提交 → 导出 Excel
-          </p>
+      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/70 border-b border-slate-200/50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold tracking-tight text-slate-900">
+                学生证信息管理平台
+              </h1>
+              <p className="text-[11px] font-medium text-slate-500 tracking-wide uppercase hidden sm:block">
+                Student ID Management System
+              </p>
+            </div>
+          </div>
+          <div className="text-xs text-slate-400 font-mono">
+            v1.0.0
+          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* 状态消息 */}
         {statusMessage && (
-          <div className={`p-4 rounded-lg ${
+          <div className={`p-4 rounded-xl border flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 ${
             statusMessage.includes('✅')
-              ? 'bg-green-50 text-green-700 border border-green-200'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
               : statusMessage.includes('❌')
-                ? 'bg-red-50 text-red-700 border border-red-200'
+                ? 'bg-rose-50 text-rose-700 border-rose-200/60'
                 : statusMessage.includes('⚠️')
-                  ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                  : 'bg-blue-50 text-blue-700 border border-blue-200'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200/60'
+                  : 'bg-blue-50 text-blue-700 border-blue-200/60'
           }`}>
-            {statusMessage}
+            <span className="text-lg">{statusMessage.split(' ')[0]}</span>
+            <span className="font-medium">{statusMessage.substring(statusMessage.indexOf(' ') + 1)}</span>
           </div>
         )}
 
         {/* 上传区域 + 表单 */}
-        <div className="bg-white rounded-lg shadow p-6 space-y-6">
-          <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
-            📤 第一步：上传学生证图片
-          </h2>
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-6 sm:p-8 space-y-8 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-6">
+            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                第一步：上传与识别
+              </h2>
+              <p className="text-sm text-slate-500 mt-0.5">上传学生证图片，系统将自动提取关键信息</p>
+            </div>
+          </div>
 
           <ImageUploader
             onImageUpload={handleImageUpload}
@@ -157,10 +187,22 @@ export default function Home() {
         </div>
 
         {/* 数据表格 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">
-            📊 第二步：查看和导出数据
-          </h2>
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-6 sm:p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                  第二步：查看与管理
+                </h2>
+                <p className="text-sm text-slate-500 mt-0.5">核对学生信息并导出数据</p>
+              </div>
+            </div>
+          </div>
 
           <StudentTable
             students={students}
@@ -178,9 +220,15 @@ export default function Home() {
       </main>
 
       {/* 底部 */}
-      <footer className="bg-white border-t mt-8">
-        <div className="max-w-7xl mx-auto px-4 py-4 text-center text-sm text-gray-500">
-          学生证信息管理平台 - 使用千问视觉 AI 识别
+      <footer className="border-t border-slate-200/50 bg-white/30 backdrop-blur-md mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-slate-500 text-sm">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            系统运行正常
+          </div>
+          <p className="text-xs text-slate-400 font-medium">
+            © {new Date().getFullYear()} Student ID Management System. Powered by AI.
+          </p>
         </div>
       </footer>
     </div>

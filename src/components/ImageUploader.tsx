@@ -58,9 +58,11 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
     <div className="w-full">
       <div
         {...getRootProps()}
-        className={`relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-          ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
-          ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`relative border-2 border-dashed rounded-[2rem] p-10 text-center cursor-pointer transition-all duration-300
+          ${isDragActive
+            ? 'border-indigo-500 bg-indigo-50/50 shadow-inner shadow-indigo-100 scale-[1.01]'
+            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-lg hover:shadow-slate-100/50'}
+          ${isLoading ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''}`}
       >
         <input {...getInputProps()} />
 
@@ -69,37 +71,57 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
           <button
             type="button"
             onClick={handleRemoveImage}
-            className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-white/80 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full shadow transition-colors z-10"
+            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/90 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-full shadow-lg shadow-slate-200/50 border border-slate-100 transition-all hover:scale-110 z-10"
             title="删除图片"
           >
-            ✕
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         )}
 
         {preview ? (
-          <div className="space-y-4">
-            <img
-              src={preview}
-              alt="预览"
-              className="max-h-64 mx-auto rounded shadow"
-            />
+          <div className="space-y-6">
+            <div className="relative group w-full max-w-lg mx-auto">
+              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+              <img
+                src={preview}
+                alt="预览"
+                className="relative w-full max-h-80 object-contain rounded-2xl shadow-xl ring-1 ring-slate-900/5"
+              />
+            </div>
             {isLoading ? (
-              <p className="text-blue-600">正在识别中，请稍候...</p>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 animate-pulse">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-indigo-600 font-bold tracking-wide">AI 正在识别中，请稍候...</p>
+              </div>
             ) : (
-              <p className="text-gray-500">点击或拖拽图片到此处更换</p>
+              <p className="text-slate-500 font-medium bg-white/50 inline-block px-4 py-2 rounded-full border border-slate-100">
+                点击或拖拽图片到此处更换
+              </p>
             )}
           </div>
         ) : (
-          <div className="space-y-2">
-            <div className="text-4xl">📄</div>
-            {isDragActive ? (
-              <p className="text-blue-600">松开鼠标上传图片</p>
-            ) : (
-              <>
-                <p className="text-gray-600">点击或拖拽学生证图片到此处</p>
-                <p className="text-sm text-gray-400">支持 JPG, PNG, BMP 格式</p>
-              </>
-            )}
+          <div className="space-y-6 py-4">
+            <div className="w-20 h-20 mx-auto rounded-[1.5rem] bg-gradient-to-br from-indigo-50 to-blue-50 flex items-center justify-center text-4xl shadow-inner border border-indigo-100/50 group-hover:scale-110 transition-transform duration-300">
+              {isDragActive ? '📥' : '📄'}
+            </div>
+            <div className="space-y-2">
+              {isDragActive ? (
+                <p className="text-indigo-600 font-bold text-lg">松开鼠标上传图片</p>
+              ) : (
+                <>
+                  <p className="text-slate-700 font-bold text-lg">点击或拖拽学生证图片到此处</p>
+                  <p className="text-sm text-slate-400 font-medium">
+                    支持 JPG, PNG, BMP 格式，建议分辨率不低于 800px
+                  </p>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -112,8 +134,19 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
         confirmText="确认删除"
         cancelText="取消"
       >
-        <p>确定要删除当前预览的图片吗？</p>
-        <p className="text-sm text-gray-500 mt-2">删除图片后，已识别的文本信息并不会被清除。</p>
+        <div className="flex flex-col items-center text-center py-2">
+          <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 mb-4">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+          </div>
+          <p className="text-slate-600 font-medium">
+            确定要删除当前预览的图片吗？
+          </p>
+          <p className="text-sm text-slate-400 mt-2">
+            删除图片后，已识别的文本信息并不会被清除。
+          </p>
+        </div>
       </Modal>
     </div>
   )

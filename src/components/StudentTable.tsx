@@ -40,6 +40,8 @@ export default function StudentTable({
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
   const [alertModal, setAlertModal] = useState<{ title: string; message: string } | null>(null)
 
+  const totalPages = Math.ceil(totalCount / pageSize)
+
   const handleExport = async () => {
     setIsExporting(true)
     try {
@@ -93,89 +95,126 @@ export default function StudentTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* 操作栏 */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">
-          已录入数据 ({students.length} 条)
-        </h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="text-2xl font-black text-slate-800 tracking-tighter">
+            {students.length}
+          </div>
+          <div className="text-sm font-medium text-slate-500 border-l border-slate-200 pl-3">
+            当前页显示条数
+          </div>
+        </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-3 w-full sm:w-auto">
           <button
             onClick={onRefresh}
-            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
+            className="flex-1 sm:flex-none px-5 py-2.5 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm hover:shadow flex items-center justify-center gap-2"
           >
-            刷新
+            <svg className={`w-4 h-4 ${isExporting ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            刷新数据
           </button>
 
           <button
             onClick={handleExport}
             disabled={isExporting || students.length === 0}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-md
+            className={`flex-1 sm:flex-none px-5 py-2.5 text-sm font-bold text-white rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2
               ${isExporting || students.length === 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'}`}
+                ? 'bg-slate-400 cursor-not-allowed shadow-none'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/25'}`}
           >
-            {isExporting ? '导出中...' : '📥 导出 Excel'}
+            {isExporting ? (
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            )}
+            {isExporting ? '正在导出...' : '导出 Excel'}
           </button>
         </div>
       </div>
 
       {/* 表格 */}
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50">
+        <table className="w-full text-left text-sm text-slate-600">
+          <thead className="text-xs font-bold text-slate-500 uppercase bg-slate-50/50 border-b border-slate-100">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">学号</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">姓名</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">邮箱</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">专业</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">角色</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">兴趣方向</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">意向主题</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">录入时间</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+              <th className="px-6 py-4 font-bold tracking-wider">学号</th>
+              <th className="px-6 py-4 font-bold tracking-wider">姓名</th>
+              <th className="px-6 py-4 font-bold tracking-wider hidden lg:table-cell">邮箱</th>
+              <th className="px-6 py-4 font-bold tracking-wider hidden md:table-cell">专业</th>
+              <th className="px-6 py-4 font-bold tracking-wider">角色</th>
+              <th className="px-6 py-4 font-bold tracking-wider hidden xl:table-cell">兴趣方向</th>
+              <th className="px-6 py-4 font-bold tracking-wider hidden xl:table-cell">意向主题</th>
+              <th className="px-6 py-4 font-bold tracking-wider">录入时间</th>
+              <th className="px-6 py-4 font-bold tracking-wider text-right">操作</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-100">
             {students.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-400">
-                  暂无数据，请上传学生证图片录入信息
+                <td colSpan={9} className="px-6 py-16 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-3 text-slate-400">
+                    <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-3xl mb-2">
+                      📂
+                    </div>
+                    <p className="font-bold text-slate-500 text-lg">暂无数据</p>
+                    <p className="text-sm">请上传学生证图片以录入信息</p>
+                  </div>
                 </td>
               </tr>
             ) : (
-              students.map((student) => (
-                <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900 font-mono">{student.studentId || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{student.name || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{student.email || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{student.major || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                      {student.role || '-'}
+              students.map((student, index) => (
+                <tr key={student.id} className={`group hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/20'}`}>
+                  <td className="px-6 py-4 font-mono text-indigo-600 font-bold">{student.studentId || '-'}</td>
+                  <td className="px-6 py-4 font-semibold text-slate-900">{student.name || '-'}</td>
+                  <td className="px-6 py-4 text-slate-500 hidden lg:table-cell truncate max-w-[200px]">{student.email || '-'}</td>
+                  <td className="px-6 py-4 hidden md:table-cell">{student.major || '-'}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider
+                      ${student.role === 'teacher'
+                        ? 'bg-purple-100 text-purple-700 ring-1 ring-purple-200/50'
+                        : 'bg-blue-100 text-blue-700 ring-1 ring-blue-200/50'}`}>
+                      {student.role === 'teacher' ? '教师' : student.role === 'student' ? '学生' : student.role || '-'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
+                  <td className="px-6 py-4 hidden xl:table-cell">
                     {student.interestDirection
                       ? student.interestDirection.split(',').map((tag, i) => (
-                          <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mr-1">
+                          <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-600 mr-1.5 border border-emerald-100/50">
                             {tag}
                           </span>
                         ))
                       : '-'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{student.interestTopic || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-slate-600 hidden xl:table-cell truncate max-w-[150px]">{student.interestTopic || '-'}</td>
+                  <td className="px-6 py-4 text-slate-400 font-medium text-xs whitespace-nowrap">
                     {new Date(student.createdAt).toLocaleString('zh-CN')}
                   </td>
-                  <td className="px-4 py-3 text-sm">
+                  <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => handleDelete(student.id)}
                       disabled={deletingId === student.id}
-                      className="text-red-600 hover:text-red-800 disabled:text-gray-400"
+                      className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-all disabled:opacity-50"
+                      title="删除记录"
                     >
-                      {deletingId === student.id ? '删除中...' : '删除'}
+                      {deletingId === student.id ? (
+                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
                     </button>
                   </td>
                 </tr>
@@ -187,24 +226,35 @@ export default function StudentTable({
 
       {/* 分页控制 */}
       {totalCount > 0 && (
-        <div className="flex items-center justify-between pt-4">
-          <div className="text-sm text-gray-600">
-            共 {totalCount} 条记录，当前第 {currentPage} / {Math.ceil(totalCount / pageSize)} 页
+        <div className="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-slate-100">
+          <div className="text-sm font-medium text-slate-500 mb-4 sm:mb-0 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
+            共 <span className="font-bold text-slate-700">{totalCount}</span> 条记录
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow flex items-center gap-2"
             >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
               上一页
             </button>
+
+            <div className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
+              {currentPage} / {totalPages}
+            </div>
+
             <button
               onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage >= Math.ceil(totalCount / pageSize)}
-              className="px-3 py-1 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={currentPage >= totalPages}
+              className="px-5 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center gap-2"
             >
               下一页
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </div>
@@ -218,7 +268,19 @@ export default function StudentTable({
         confirmText="确认删除"
         cancelText="取消"
       >
-        <p>确定要删除这条记录吗？此操作不可撤销。</p>
+        <div className="flex flex-col items-center text-center py-2">
+          <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 mb-4">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </div>
+          <p className="text-slate-600 font-medium">
+            确定要删除这条学生记录吗？
+          </p>
+          <p className="text-sm text-slate-400 mt-2">
+            此操作不可撤销，数据将永久移除。
+          </p>
+        </div>
       </Modal>
 
       {alertModal && (
@@ -230,7 +292,14 @@ export default function StudentTable({
           confirmText="我知道了"
           cancelText=""
         >
-          <p>{alertModal.message}</p>
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 mx-auto mb-4">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <p className="text-slate-600 font-medium">{alertModal.message}</p>
+          </div>
         </Modal>
       )}
     </div>
