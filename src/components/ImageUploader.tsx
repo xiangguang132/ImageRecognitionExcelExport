@@ -91,13 +91,21 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
               />
             </div>
             {isLoading ? (
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 animate-pulse">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="flex flex-col items-center gap-6">
+                <div className="w-40 h-40 relative">
+                  <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-lg animate-pulse">
+                    <path fill="#E0E7FF" d="M39.5,-51.2C50.8,-44.3,58.1,-31,62.1,-16C66.1,-1,66.7,15.6,59.5,28.8C52.2,42,37.1,51.7,21.6,57.8C6,63.8,-10,66.1,-24.4,61.1C-38.7,56.1,-51.4,43.7,-58.5,29C-65.6,14.3,-67.1,-2.6,-62.4,-17.2C-57.7,-31.8,-46.8,-44.1,-34.6,-51C-22.4,-57.9,-9,-59.3,3.4,-63.7C15.8,-68.1,28.1,-58.1,39.5,-51.2Z" transform="translate(100 100)" />
+                    <g transform="translate(100, 100)">
+                      <rect x="-30" y="-35" width="60" height="50" rx="4" fill="#4F46E5" />
+                      <circle cx="0" cy="-10" r="10" fill="#fff" opacity="0.8" />
+                      <path d="M-10,15 L0,5 L10,15" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" />
+                    </g>
                   </svg>
                 </div>
-                <p className="text-indigo-600 font-bold tracking-wide">AI 正在识别中，请稍候...</p>
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-indigo-600 font-bold text-lg tracking-wide">AI 正在识别中</p>
+                  <p className="text-sm text-slate-500">请稍候，正在提取图片中的文本信息...</p>
+                </div>
               </div>
             ) : (
               <p className="text-slate-500 font-medium bg-white/50 inline-block px-4 py-2 rounded-full border border-slate-100">
@@ -107,9 +115,34 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
           </div>
         ) : (
           <div className="space-y-6 py-4">
-            <div className="w-20 h-20 mx-auto rounded-[1.5rem] bg-gradient-to-br from-indigo-50 to-blue-50 flex items-center justify-center text-4xl shadow-inner border border-indigo-100/50 group-hover:scale-110 transition-transform duration-300">
-              {isDragActive ? '📥' : '📄'}
-            </div>
+            {isDragActive ? (
+              <div className="w-40 h-40 mx-auto animate-bounce">
+                <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-xl">
+                  <path fill="#E2E8F0" d="M48.6,-62.3C59.9,-55.4,64.8,-37.3,68.3,-19.1C71.9,-0.8,74.1,17.6,67.5,31.8C60.9,46.1,45.5,56.2,30.1,62.5C14.6,68.8,-1.1,71.3,-17.4,68.8C-33.7,66.3,-50.7,58.8,-60.8,46C-71,33.2,-74.4,15.1,-73.1,-2.7C-71.9,-20.5,-66,-38,-54.7,-46.6C-43.5,-55.3,-26.9,-55.1,-9.8,-59.5C7.3,-63.9,37.3,-69.1,48.6,-62.3Z" transform="translate(100 100)" />
+                  <g transform="translate(100, 100)">
+                    <path fill="#A0AEC0" d="M-20,-30 L20,-30 L30,-10 L25,20 L-25,20 L-30,-10 Z" />
+                    <circle fill="#EDF2F7" cx="0" cy="-20" r="12" />
+                  </g>
+                </svg>
+              </div>
+            ) : (
+              <div className="w-48 h-48 mx-auto">
+                <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md hover:scale-105 transition-transform duration-500">
+                  <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{stopColor:'#818CF8', stopOpacity:1}} />
+                      <stop offset="100%" style={{stopColor:'#6366F1', stopOpacity:1}} />
+                    </linearGradient>
+                  </defs>
+                  <path fill="#E0E7FF" d="M39.5,-51.2C50.8,-44.3,58.1,-31,62.1,-16C66.1,-1,66.7,15.6,59.5,28.8C52.2,42,37.1,51.7,21.6,57.8C6,63.8,-10,66.1,-24.4,61.1C-38.7,56.1,-51.4,43.7,-58.5,29C-65.6,14.3,-67.1,-2.6,-62.4,-17.2C-57.7,-31.8,-46.8,-44.1,-34.6,-51C-22.4,-57.9,-9,-59.3,3.4,-63.7C15.8,-68.1,28.1,-58.1,39.5,-51.2Z" transform="translate(100 100)" />
+                  <g transform="translate(100, 100)">
+                    <rect x="-30" y="-35" width="60" height="50" rx="4" fill="url(#grad1)" />
+                    <circle cx="-15" cy="-15" r="6" fill="#fff" opacity="0.8" />
+                    <path d="M-20,5 L-5,-10 L10,5 L25,-15" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </g>
+                </svg>
+              </div>
+            )}
             <div className="space-y-2">
               {isDragActive ? (
                 <p className="text-indigo-600 font-bold text-lg">松开鼠标上传图片</p>
@@ -135,15 +168,21 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
         cancelText="取消"
       >
         <div className="flex flex-col items-center text-center py-2">
-          <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 mb-4">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          <div className="w-40 h-40 mb-2">
+            <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md">
+              <path fill="#FEE2E2" d="M48.6,-62.3C59.9,-55.4,64.8,-37.3,68.3,-19.1C71.9,-0.8,74.1,17.6,67.5,31.8C60.9,46.1,45.5,56.2,30.1,62.5C14.6,68.8,-1.1,71.3,-17.4,68.8C-33.7,66.3,-50.7,58.8,-60.8,46C-71,33.2,-74.4,15.1,-73.1,-2.7C-71.9,-20.5,-66,-38,-54.7,-46.6C-43.5,-55.3,-26.9,-55.1,-9.8,-59.5C7.3,-63.9,37.3,-69.1,48.6,-62.3Z" transform="translate(100 100)" />
+              <g transform="translate(100, 100)">
+                <rect x="-30" y="-35" width="60" height="50" rx="4" fill="#EF4444" />
+                <circle cx="-15" cy="-15" r="6" fill="#fff" opacity="0.8" />
+                <path d="M-20,5 L-5,-10 L10,5 L25,-15" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" />
+                <path d="M-5,25 L5,15" stroke="#EF4444" strokeWidth="4" strokeLinecap="round" />
+              </g>
             </svg>
           </div>
-          <p className="text-slate-600 font-medium">
+          <p className="text-slate-700 font-bold text-lg">
             确定要删除当前预览的图片吗？
           </p>
-          <p className="text-sm text-slate-400 mt-2">
+          <p className="text-sm text-slate-500 mt-2">
             删除图片后，已识别的文本信息并不会被清除。
           </p>
         </div>

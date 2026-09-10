@@ -296,8 +296,19 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
         confirmText={isSubmitting ? '提交中...' : '确认无误，提交'}
         cancelText="返回修改"
       >
-        <div className="space-y-4">
-          <p className="text-slate-600 font-medium border-b border-slate-100 pb-4">
+        <div className="space-y-6">
+          <div className="flex justify-center -mt-2 mb-4">
+            <div className="w-32 h-32">
+              <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md">
+                <path fill="#E0E7FF" d="M39.5,-51.2C50.8,-44.3,58.1,-31,62.1,-16C66.1,-1,66.7,15.6,59.5,28.8C52.2,42,37.1,51.7,21.6,57.8C6,63.8,-10,66.1,-24.4,61.1C-38.7,56.1,-51.4,43.7,-58.5,29C-65.6,14.3,-67.1,-2.6,-62.4,-17.2C-57.7,-31.8,-46.8,-44.1,-34.6,-51C-22.4,-57.9,-9,-59.3,3.4,-63.7C15.8,-68.1,28.1,-58.1,39.5,-51.2Z" transform="translate(100 100)" />
+                <g transform="translate(100, 100)">
+                  <circle fill="#4F46E5" r="25" />
+                  <path stroke="#fff" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" d="M-10 0 L-3 7 L10 -7" />
+                </g>
+              </svg>
+            </div>
+          </div>
+          <p className="text-slate-600 font-medium text-center">
             请最后核对一次以下信息，提交后将存入数据库：
           </p>
           <div className="grid gap-3 bg-slate-50 p-5 rounded-xl border border-slate-100/50 shadow-inner">

@@ -161,12 +161,23 @@ export default function StudentTable({
             {students.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-6 py-16 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-3 text-slate-400">
-                    <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-3xl mb-2">
-                      📂
+                  <div className="flex flex-col items-center justify-center space-y-4 text-slate-400">
+                    <div className="w-64 h-64">
+                      <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-sm opacity-80">
+                        <path fill="#E2E8F0" d="M48.6,-62.3C59.9,-55.4,64.8,-37.3,68.3,-19.1C71.9,-0.8,74.1,17.6,67.5,31.8C60.9,46.1,45.5,56.2,30.1,62.5C14.6,68.8,-1.1,71.3,-17.4,68.8C-33.7,66.3,-50.7,58.8,-60.8,46C-71,33.2,-74.4,15.1,-73.1,-2.7C-71.9,-20.5,-66,-38,-54.7,-46.6C-43.5,-55.3,-26.9,-55.1,-9.8,-59.5C7.3,-63.9,37.3,-69.1,48.6,-62.3Z" transform="translate(100 100)" />
+                        <g transform="translate(100, 100)">
+                          <rect x="-40" y="-30" width="80" height="60" rx="6" fill="#A0AEC0" />
+                          <rect x="-30" y="-20" width="40" height="5" rx="2" fill="#E2E8F0" />
+                          <rect x="-30" y="-10" width="60" height="4" rx="2" fill="#E2E8F0" />
+                          <rect x="-30" y="0" width="50" height="4" rx="2" fill="#E2E8F0" />
+                          <rect x="-30" y="10" width="30" height="4" rx="2" fill="#E2E8F0" />
+                        </g>
+                      </svg>
                     </div>
-                    <p className="font-bold text-slate-500 text-lg">暂无数据</p>
-                    <p className="text-sm">请上传学生证图片以录入信息</p>
+                    <div className="space-y-1">
+                      <p className="font-bold text-slate-500 text-lg">暂无数据</p>
+                      <p className="text-sm">请上传学生证图片以录入信息</p>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -269,15 +280,20 @@ export default function StudentTable({
         cancelText="取消"
       >
         <div className="flex flex-col items-center text-center py-2">
-          <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 mb-4">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <div className="w-40 h-40 mb-2">
+            <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md">
+              <path fill="#FEE2E2" d="M48.6,-62.3C59.9,-55.4,64.8,-37.3,68.3,-19.1C71.9,-0.8,74.1,17.6,67.5,31.8C60.9,46.1,45.5,56.2,30.1,62.5C14.6,68.8,-1.1,71.3,-17.4,68.8C-33.7,66.3,-50.7,58.8,-60.8,46C-71,33.2,-74.4,15.1,-73.1,-2.7C-71.9,-20.5,-66,-38,-54.7,-46.6C-43.5,-55.3,-26.9,-55.1,-9.8,-59.5C7.3,-63.9,37.3,-69.1,48.6,-62.3Z" transform="translate(100 100)" />
+              <g transform="translate(100, 100)">
+                <path fill="#EF4444" d="M-15 -25 h30 a5 5 0 0 1 5 5 v40 a5 5 0 0 1 -5 5 h-30 a5 5 0 0 1 -5 -5 v-40 a5 5 0 0 1 5 -5 z" />
+                <path stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" d="M-8 -10 h16 M-8 0 h16 M-8 10 h10" />
+                <rect x="-5" y="-30" width="10" height="5" rx="2" fill="#EF4444" />
+              </g>
             </svg>
           </div>
-          <p className="text-slate-600 font-medium">
-            确定要删除这条学生记录吗？
+          <p className="text-slate-700 font-bold text-lg">
+            确定要删除这条记录吗？
           </p>
-          <p className="text-sm text-slate-400 mt-2">
+          <p className="text-sm text-slate-500 mt-2">
             此操作不可撤销，数据将永久移除。
           </p>
         </div>
@@ -292,13 +308,18 @@ export default function StudentTable({
           confirmText="我知道了"
           cancelText=""
         >
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 mx-auto mb-4">
-              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <div className="flex flex-col items-center text-center py-2">
+            <div className="w-40 h-40 mb-2">
+              <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md">
+                <path fill="#FEF3C7" d="M48.6,-62.3C59.9,-55.4,64.8,-37.3,68.3,-19.1C71.9,-0.8,74.1,17.6,67.5,31.8C60.9,46.1,45.5,56.2,30.1,62.5C14.6,68.8,-1.1,71.3,-17.4,68.8C-33.7,66.3,-50.7,58.8,-60.8,46C-71,33.2,-74.4,15.1,-73.1,-2.7C-71.9,-20.5,-66,-38,-54.7,-46.6C-43.5,-55.3,-26.9,-55.1,-9.8,-59.5C7.3,-63.9,37.3,-69.1,48.6,-62.3Z" transform="translate(100 100)" />
+                <g transform="translate(100, 100)">
+                  <path fill="#F59E0B" d="M-20 30 L0 -30 L20 30 Z" />
+                  <circle fill="#fff" cx="0" cy="-10" r="2.5" />
+                  <rect fill="#fff" x="-1.5" y="-5" width="3" height="12" rx="1.5" />
+                </g>
               </svg>
             </div>
-            <p className="text-slate-600 font-medium">{alertModal.message}</p>
+            <p className="text-slate-700 font-bold text-lg">{alertModal.message}</p>
           </div>
         </Modal>
       )}
