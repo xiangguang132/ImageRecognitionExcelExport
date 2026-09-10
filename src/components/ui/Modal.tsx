@@ -59,7 +59,7 @@ export default function Modal({
       ref={dialogRef}
       onClose={handleClose}
       onCancel={handleCancel}
-      className="backdrop:bg-black/50 p-0 rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+      className="backdrop:bg-black/50 p-0 rounded-xl shadow-2xl w-full max-w-md overflow-hidden m-auto"
     >
       <div className="bg-white">
         {/* Header */}
