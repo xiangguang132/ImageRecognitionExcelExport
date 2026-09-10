@@ -1,0 +1,114 @@
+/**
+ * OCR 模块
+ * 使用千问视觉 API 通过后端 /api/recognize 进行识别
+ */
+
+export interface StudentInfo {
+  studentId: string    // 学号（图片原始格式）
+  name: string         // 姓名（繁体中文）
+  email: string        // 邮箱（自动生成）
+  major: string        // 专业（用户手动填写）
+  role: string         // 角色
+  interestDirection: string  // 未来兴趣方向（项目/研究）
+  interestTopic: string      // 意向参与主题
+}
+
+/**
+ * 处理学号：只保留数字和大写字母
+ * 例如 "A-C2-0130-1" → "AC201301"
+ */
+export function cleanStudentId(raw: string): string {
+  const cleaned = raw.replace(/[^0-9A-Z]/gi, '').toUpperCase()
+  console.log('[前端] 学号清洗:', raw, '→', cleaned)
+  return cleaned
+}
+
+/**
+ * 根据学号生成默认邮箱
+ * 规则：学号去掉最后一位数字 + @connect.um.edu.mo
+ * 例如 AC201301 → ac20130@connect.um.edu.mo
+ */
+export function generateEmail(studentId: string): string {
+  // 只去掉最后一位数字，而不是所有末尾数字
+  const prefix = studentId.length > 1 ? studentId.slice(0, -1) : studentId
+  const email = prefix.toLowerCase() + '@connect.um.edu.mo'
+  console.log('[前端] 邮箱生成:', studentId, '→', email)
+  return email
+}
+
+/**
+ * 角色映射：将 OCR 识别的角色文本转为标准值
+ * 支持 "STUDENT 学生" / "TEACHER 教师" 等复杂格式
+ */
+function mapRole(raw: string): string {
+  const lowerRaw = raw.toLowerCase()
+
+  if (lowerRaw.includes('student') || lowerRaw.includes('学生') || lowerRaw.includes('學生')) {
+    return 'student'
+  }
+
+  if (lowerRaw.includes('teacher') || lowerRaw.includes('教师') || lowerRaw.includes('教師')) {
+    return 'teacher'
+  }
+
+  console.log('[前端] 角色映射: 未匹配到标准值，原样返回:', raw)
+  return raw
+}
+
+/**
+ * 调用后端 API 进行 AI 视觉识别
+ */
+export async function recognizeWithAI(file: File): Promise<StudentInfo> {
+  console.log('[前端] ===== 开始 AI 识别 =====')
+  console.log('[前端] 文件:', file.name, '|', (file.size / 1024).toFixed(1) + 'KB')
+
+  const formData = new FormData()
+  formData.append('image', file)
+
+  console.log('[前端] 发送请求到 /api/recognize ...')
+  const startTime = Date.now()
+
+  const response = await fetch('/api/recognize', {
+    method: 'POST',
+    body: formData
+  })
+
+  const elapsed = Date.now() - startTime
+  console.log('[前端] API 响应耗时:', elapsed, 'ms')
+
+  if (!response.ok) {
+    const err = await response.json()
+    console.error('[前端] ❌ API 返回错误:', err)
+    throw new Error(err.error || '识别失败')
+  }
+
+  const data = await response.json()
+  console.log('[前端] AI 识别原始结果:', data)
+
+  // 处理学号和邮箱
+  const cleanId = data.studentId ? cleanStudentId(data.studentId) : ''
+  const email = cleanId ? generateEmail(cleanId) : ''
+
+  const info: StudentInfo = {
+    studentId: cleanId,
+    name: data.name || '',
+    email: email,
+    major: '',
+    role: data.role ? mapRole(data.role) : '',
+    interestDirection: '',
+    interestTopic: ''
+  }
+
+  console.log('[前端] ===== 最终提取结果 =====')
+  console.table({
+    学号: info.studentId || '(空)',
+    姓名: info.name || '(空)',
+    邮箱: info.email || '(空)',
+    专业: info.major || '(空，需手动填写)',
+    角色: info.role || '(空)',
+    兴趣方向: info.interestDirection || '(空，需手动选择)',
+    意向主题: info.interestTopic || '(空，需手动填写)'
+  })
+
+  return info
+}
