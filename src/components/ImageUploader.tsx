@@ -58,7 +58,7 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
     <div className="w-full">
       <div
         {...getRootProps()}
-        className={`relative border-2 border-dashed rounded-[2rem] p-10 text-center cursor-pointer transition-all duration-300
+        className={`relative border-2 border-dashed rounded-[1.5rem] p-8 text-center cursor-pointer transition-all duration-300
           ${isDragActive
             ? 'border-indigo-500 bg-indigo-50/50 shadow-inner shadow-indigo-100 scale-[1.01]'
             : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-lg hover:shadow-slate-100/50'}
@@ -71,28 +71,28 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
           <button
             type="button"
             onClick={handleRemoveImage}
-            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/90 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-full shadow-lg shadow-slate-200/50 border border-slate-100 transition-all hover:scale-110 z-10"
+            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white/90 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-full shadow-lg shadow-slate-200/50 border border-slate-100 transition-all hover:scale-110 z-10"
             title="删除图片"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         )}
 
         {preview ? (
-          <div className="space-y-6">
-            <div className="relative group w-full max-w-lg mx-auto">
+          <div className="space-y-4">
+            <div className="relative group w-full max-w-sm mx-auto">
               <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
               <img
                 src={preview}
                 alt="预览"
-                className="relative w-full max-h-80 object-contain rounded-2xl shadow-xl ring-1 ring-slate-900/5"
+                className="relative w-full max-h-48 object-contain rounded-2xl shadow-xl ring-1 ring-slate-900/5"
               />
             </div>
             {isLoading ? (
-              <div className="flex flex-col items-center gap-6">
-                <div className="w-40 h-40 relative">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-32 h-32 relative">
                   <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-lg animate-pulse">
                     <path fill="#E0E7FF" d="M39.5,-51.2C50.8,-44.3,58.1,-31,62.1,-16C66.1,-1,66.7,15.6,59.5,28.8C52.2,42,37.1,51.7,21.6,57.8C6,63.8,-10,66.1,-24.4,61.1C-38.7,56.1,-51.4,43.7,-58.5,29C-65.6,14.3,-67.1,-2.6,-62.4,-17.2C-57.7,-31.8,-46.8,-44.1,-34.6,-51C-22.4,-57.9,-9,-59.3,3.4,-63.7C15.8,-68.1,28.1,-58.1,39.5,-51.2Z" transform="translate(100 100)" />
                     <g transform="translate(100, 100)">
@@ -102,35 +102,32 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
                     </g>
                   </svg>
                 </div>
-                <div className="flex flex-col items-center gap-2">
-                  <p className="text-indigo-600 font-bold text-lg tracking-wide">AI 正在识别中</p>
-                  <p className="text-sm text-slate-500">请稍候，正在提取图片中的文本信息...</p>
-                </div>
+                <p className="text-indigo-600 font-bold text-sm tracking-wide">AI 正在识别中</p>
               </div>
             ) : (
-              <p className="text-slate-500 font-medium bg-white/50 inline-block px-4 py-2 rounded-full border border-slate-100">
+              <p className="text-slate-500 font-medium text-xs bg-white/50 inline-block px-3 py-1.5 rounded-full border border-slate-100">
                 点击或拖拽图片到此处更换
               </p>
             )}
           </div>
         ) : (
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 py-2">
             {isDragActive ? (
-              <div className="w-64 h-48 mx-auto animate-bounce">
+              <div className="w-48 h-36 mx-auto animate-bounce">
                 <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Upload Warning Illustration" className="w-full h-full object-contain drop-shadow-xl opacity-90" />
               </div>
             ) : (
-              <div className="w-64 h-48 mx-auto">
+              <div className="w-48 h-36 mx-auto">
                 <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Upload Illustration" className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition-transform duration-500" />
               </div>
             )}
-            <div className="space-y-2">
+            <div className="space-y-1">
               {isDragActive ? (
-                <p className="text-indigo-600 font-bold text-lg">松开鼠标上传图片</p>
+                <p className="text-indigo-600 font-bold text-base">松开鼠标上传图片</p>
               ) : (
                 <>
-                  <p className="text-slate-700 font-bold text-lg">点击或拖拽学生证图片到此处</p>
-                  <p className="text-sm text-slate-400 font-medium">
+                  <p className="text-slate-700 font-bold text-base">点击或拖拽学生证图片到此处</p>
+                  <p className="text-xs text-slate-400 font-medium">
                     支持 JPG, PNG, BMP 格式，建议分辨率不低于 800px
                   </p>
                 </>

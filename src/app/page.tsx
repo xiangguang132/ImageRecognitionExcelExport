@@ -138,10 +138,10 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* 状态消息 */}
         {statusMessage && (
-          <div className={`p-4 rounded-xl border flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 ${
+          <div className={`p-3 rounded-xl border flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 ${
             statusMessage.includes('✅')
               ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
               : statusMessage.includes('❌')
@@ -151,23 +151,23 @@ export default function Home() {
                   : 'bg-blue-50 text-blue-700 border-blue-200/60'
           }`}>
             <span className="text-lg">{statusMessage.split(' ')[0]}</span>
-            <span className="font-medium">{statusMessage.substring(statusMessage.indexOf(' ') + 1)}</span>
+            <span className="font-medium text-sm">{statusMessage.substring(statusMessage.indexOf(' ') + 1)}</span>
           </div>
         )}
 
         {/* 上传区域 + 表单 */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-6 sm:p-8 space-y-8 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-6">
-            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-5 sm:p-6 space-y-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
                 第一步：上传与识别
               </h2>
-              <p className="text-sm text-slate-500 mt-0.5">上传学生证图片，系统将自动提取关键信息</p>
+              <p className="text-xs text-slate-500 mt-0.5">上传学生证图片，系统将自动提取关键信息</p>
             </div>
           </div>
 
@@ -187,19 +187,19 @@ export default function Home() {
         </div>
 
         {/* 数据表格 */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-6 sm:p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-5 sm:p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight">
                   第二步：查看与管理
                 </h2>
-                <p className="text-sm text-slate-500 mt-0.5">核对学生信息并导出数据</p>
+                <p className="text-xs text-slate-500 mt-0.5">核对学生信息并导出数据</p>
               </div>
             </div>
           </div>
