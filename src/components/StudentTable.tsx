@@ -162,17 +162,8 @@ export default function StudentTable({
               <tr>
                 <td colSpan={9} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center justify-center space-y-4 text-slate-400">
-                    <div className="w-64 h-64">
-                      <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-sm opacity-80">
-                        <path fill="#E2E8F0" d="M48.6,-62.3C59.9,-55.4,64.8,-37.3,68.3,-19.1C71.9,-0.8,74.1,17.6,67.5,31.8C60.9,46.1,45.5,56.2,30.1,62.5C14.6,68.8,-1.1,71.3,-17.4,68.8C-33.7,66.3,-50.7,58.8,-60.8,46C-71,33.2,-74.4,15.1,-73.1,-2.7C-71.9,-20.5,-66,-38,-54.7,-46.6C-43.5,-55.3,-26.9,-55.1,-9.8,-59.5C7.3,-63.9,37.3,-69.1,48.6,-62.3Z" transform="translate(100 100)" />
-                        <g transform="translate(100, 100)">
-                          <rect x="-40" y="-30" width="80" height="60" rx="6" fill="#A0AEC0" />
-                          <rect x="-30" y="-20" width="40" height="5" rx="2" fill="#E2E8F0" />
-                          <rect x="-30" y="-10" width="60" height="4" rx="2" fill="#E2E8F0" />
-                          <rect x="-30" y="0" width="50" height="4" rx="2" fill="#E2E8F0" />
-                          <rect x="-30" y="10" width="30" height="4" rx="2" fill="#E2E8F0" />
-                        </g>
-                      </svg>
+                    <div className="w-64 h-48">
+                      <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/empty.svg" alt="Empty Illustration" className="w-full h-full object-contain drop-shadow-sm opacity-90" />
                     </div>
                     <div className="space-y-1">
                       <p className="font-bold text-slate-500 text-lg">暂无数据</p>
@@ -280,15 +271,8 @@ export default function StudentTable({
         cancelText="取消"
       >
         <div className="flex flex-col items-center text-center py-2">
-          <div className="w-40 h-40 mb-2">
-            <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md">
-              <path fill="#FEE2E2" d="M48.6,-62.3C59.9,-55.4,64.8,-37.3,68.3,-19.1C71.9,-0.8,74.1,17.6,67.5,31.8C60.9,46.1,45.5,56.2,30.1,62.5C14.6,68.8,-1.1,71.3,-17.4,68.8C-33.7,66.3,-50.7,58.8,-60.8,46C-71,33.2,-74.4,15.1,-73.1,-2.7C-71.9,-20.5,-66,-38,-54.7,-46.6C-43.5,-55.3,-26.9,-55.1,-9.8,-59.5C7.3,-63.9,37.3,-69.1,48.6,-62.3Z" transform="translate(100 100)" />
-              <g transform="translate(100, 100)">
-                <path fill="#EF4444" d="M-15 -25 h30 a5 5 0 0 1 5 5 v40 a5 5 0 0 1 -5 5 h-30 a5 5 0 0 1 -5 -5 v-40 a5 5 0 0 1 5 -5 z" />
-                <path stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" d="M-8 -10 h16 M-8 0 h16 M-8 10 h10" />
-                <rect x="-5" y="-30" width="10" height="5" rx="2" fill="#EF4444" />
-              </g>
-            </svg>
+          <div className="w-48 h-40 mb-2">
+            <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/confirm.svg" alt="Confirm Illustration" className="w-full h-full object-contain drop-shadow-md" />
           </div>
           <p className="text-slate-700 font-bold text-lg">
             确定要删除这条记录吗？
@@ -309,15 +293,8 @@ export default function StudentTable({
           cancelText=""
         >
           <div className="flex flex-col items-center text-center py-2">
-            <div className="w-40 h-40 mb-2">
-              <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md">
-                <path fill="#FEF3C7" d="M48.6,-62.3C59.9,-55.4,64.8,-37.3,68.3,-19.1C71.9,-0.8,74.1,17.6,67.5,31.8C60.9,46.1,45.5,56.2,30.1,62.5C14.6,68.8,-1.1,71.3,-17.4,68.8C-33.7,66.3,-50.7,58.8,-60.8,46C-71,33.2,-74.4,15.1,-73.1,-2.7C-71.9,-20.5,-66,-38,-54.7,-46.6C-43.5,-55.3,-26.9,-55.1,-9.8,-59.5C7.3,-63.9,37.3,-69.1,48.6,-62.3Z" transform="translate(100 100)" />
-                <g transform="translate(100, 100)">
-                  <path fill="#F59E0B" d="M-20 30 L0 -30 L20 30 Z" />
-                  <circle fill="#fff" cx="0" cy="-10" r="2.5" />
-                  <rect fill="#fff" x="-1.5" y="-5" width="3" height="12" rx="1.5" />
-                </g>
-              </svg>
+            <div className="w-48 h-40 mb-2">
+              <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/credits.svg" alt="Alert Illustration" className="w-full h-full object-contain drop-shadow-md" />
             </div>
             <p className="text-slate-700 font-bold text-lg">{alertModal.message}</p>
           </div>

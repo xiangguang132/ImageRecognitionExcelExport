@@ -116,31 +116,12 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
         ) : (
           <div className="space-y-6 py-4">
             {isDragActive ? (
-              <div className="w-40 h-40 mx-auto animate-bounce">
-                <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-xl">
-                  <path fill="#E2E8F0" d="M48.6,-62.3C59.9,-55.4,64.8,-37.3,68.3,-19.1C71.9,-0.8,74.1,17.6,67.5,31.8C60.9,46.1,45.5,56.2,30.1,62.5C14.6,68.8,-1.1,71.3,-17.4,68.8C-33.7,66.3,-50.7,58.8,-60.8,46C-71,33.2,-74.4,15.1,-73.1,-2.7C-71.9,-20.5,-66,-38,-54.7,-46.6C-43.5,-55.3,-26.9,-55.1,-9.8,-59.5C7.3,-63.9,37.3,-69.1,48.6,-62.3Z" transform="translate(100 100)" />
-                  <g transform="translate(100, 100)">
-                    <path fill="#A0AEC0" d="M-20,-30 L20,-30 L30,-10 L25,20 L-25,20 L-30,-10 Z" />
-                    <circle fill="#EDF2F7" cx="0" cy="-20" r="12" />
-                  </g>
-                </svg>
+              <div className="w-64 h-48 mx-auto animate-bounce">
+                <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/typewriter.svg" alt="Typewriter Illustration" className="w-full h-full object-contain drop-shadow-xl opacity-90" />
               </div>
             ) : (
-              <div className="w-48 h-48 mx-auto">
-                <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md hover:scale-105 transition-transform duration-500">
-                  <defs>
-                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style={{stopColor:'#818CF8', stopOpacity:1}} />
-                      <stop offset="100%" style={{stopColor:'#6366F1', stopOpacity:1}} />
-                    </linearGradient>
-                  </defs>
-                  <path fill="#E0E7FF" d="M39.5,-51.2C50.8,-44.3,58.1,-31,62.1,-16C66.1,-1,66.7,15.6,59.5,28.8C52.2,42,37.1,51.7,21.6,57.8C6,63.8,-10,66.1,-24.4,61.1C-38.7,56.1,-51.4,43.7,-58.5,29C-65.6,14.3,-67.1,-2.6,-62.4,-17.2C-57.7,-31.8,-46.8,-44.1,-34.6,-51C-22.4,-57.9,-9,-59.3,3.4,-63.7C15.8,-68.1,28.1,-58.1,39.5,-51.2Z" transform="translate(100 100)" />
-                  <g transform="translate(100, 100)">
-                    <rect x="-30" y="-35" width="60" height="50" rx="4" fill="url(#grad1)" />
-                    <circle cx="-15" cy="-15" r="6" fill="#fff" opacity="0.8" />
-                    <path d="M-20,5 L-5,-10 L10,5 L25,-15" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </g>
-                </svg>
+              <div className="w-64 h-48 mx-auto">
+                <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/not_found.svg" alt="Upload Illustration" className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition-transform duration-500" />
               </div>
             )}
             <div className="space-y-2">

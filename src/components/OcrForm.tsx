@@ -298,14 +298,8 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
       >
         <div className="space-y-6">
           <div className="flex justify-center -mt-2 mb-4">
-            <div className="w-32 h-32">
-              <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-md">
-                <path fill="#E0E7FF" d="M39.5,-51.2C50.8,-44.3,58.1,-31,62.1,-16C66.1,-1,66.7,15.6,59.5,28.8C52.2,42,37.1,51.7,21.6,57.8C6,63.8,-10,66.1,-24.4,61.1C-38.7,56.1,-51.4,43.7,-58.5,29C-65.6,14.3,-67.1,-2.6,-62.4,-17.2C-57.7,-31.8,-46.8,-44.1,-34.6,-51C-22.4,-57.9,-9,-59.3,3.4,-63.7C15.8,-68.1,28.1,-58.1,39.5,-51.2Z" transform="translate(100 100)" />
-                <g transform="translate(100, 100)">
-                  <circle fill="#4F46E5" r="25" />
-                  <path stroke="#fff" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" d="M-10 0 L-3 7 L10 -7" />
-                </g>
-              </svg>
+            <div className="w-40 h-40">
+              <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/product_hunt.svg" alt="Product Hunt Illustration" className="w-full h-full object-contain drop-shadow-md" />
             </div>
           </div>
           <p className="text-slate-600 font-medium text-center">
