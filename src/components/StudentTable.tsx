@@ -197,7 +197,7 @@ export default function StudentTable({
                       : '-'}
                   </td>
                   <td className="px-4 py-3 text-slate-600 hidden xl:table-cell truncate max-w-[120px]">{student.interestTopic || '-'}</td>
-                  <td className="px-4 py-3 text-slate-400 font-medium text-[10px] whitespace-nowrap">
+                  <td className="px-4 py-3 text-slate-400 font-medium text-xs whitespace-nowrap">
                     {new Date(student.createdAt).toLocaleString('zh-CN')}
                   </td>
                   <td className="px-4 py-3 text-right">

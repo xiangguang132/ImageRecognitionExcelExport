@@ -93,7 +93,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
               <h3 className="text-base font-bold text-slate-900 tracking-tight">
                 核对识别结果
               </h3>
-              <p className="text-[10px] text-slate-500 font-medium">
+              <p className="text-xs text-slate-500 font-medium">
                 请确保所有信息准确无误后再提交
               </p>
             </div>
@@ -102,7 +102,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
             {/* 学号 */}
             <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">01</span> 学号
               </label>
               <div className="relative group">
@@ -111,10 +111,10 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
                   name="studentId"
                   value={formData.studentId}
                   onChange={handleChange}
-                  className="w-full pl-2.5 pr-16 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm group-hover:shadow-md"
+                  className="w-full pl-2.5 pr-16 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm group-hover:shadow-md"
                   placeholder="AC201301"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                   自动提取
                 </span>
               </div>
@@ -122,7 +122,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
 
             {/* 姓名 */}
             <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">02</span> 姓名
               </label>
               <input
@@ -130,14 +130,14 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md"
+                className="w-full px-2.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="请输入姓名"
               />
             </div>
 
             {/* 身份角色 */}
             <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">03</span> 身份角色
               </label>
               <div className="relative group">
@@ -145,7 +145,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
                   name="role"
                   value={formData.role}
                   onChange={handleChange as any}
-                  className="w-full px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm appearance-none group-hover:shadow-md"
+                  className="w-full px-2.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm appearance-none group-hover:shadow-md"
                 >
                   <option value="">请选择角色</option>
                   <option value="student">Student (学生)</option>
@@ -161,7 +161,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
 
             {/* 邮箱 */}
             <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">04</span> 邮箱地址
               </label>
               <div className="relative group">
@@ -170,10 +170,10 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full pl-2.5 pr-10 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm group-hover:shadow-md"
+                  className="w-full pl-2.5 pr-10 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm group-hover:shadow-md"
                   placeholder="xxx@connect.um.edu.mo"
                 />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-serif italic font-bold text-[8px]">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-serif italic font-bold text-[10px]">
                   @
                 </div>
               </div>
@@ -181,9 +181,9 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
 
             {/* 专业 */}
             <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">05</span> 专业
-                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-rose-50 text-rose-600 uppercase tracking-widest border border-rose-100">
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 uppercase tracking-widest border border-rose-100">
                   必填
                 </span>
               </label>
@@ -192,7 +192,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
                 name="major"
                 value={formData.major}
                 onChange={handleChange}
-                className="w-full px-2.5 py-2 text-xs bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
+                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="请输入专业名称"
                 required
               />
@@ -200,7 +200,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
 
             {/* 意向参与主题 */}
             <div className="space-y-1">
-              <label className="block text-[10px] font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">06</span> 意向参与主题
               </label>
               <input
@@ -208,14 +208,14 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
                 name="interestTopic"
                 value={formData.interestTopic}
                 onChange={handleChange}
-                className="w-full px-2.5 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md"
+                className="w-full px-2.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="例如：基于大模型的代码助手研究"
               />
             </div>
 
             {/* 未来兴趣方向 - 多选 */}
             <div className="space-y-1 md:col-span-3">
-              <label className="block text-[10px] font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">07</span> 未来兴趣方向
               </label>
               <div className="flex flex-wrap gap-2">
@@ -227,7 +227,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
                   return (
                     <label
                       key={option}
-                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border cursor-pointer transition-all duration-300 font-bold shadow-sm text-xs
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border cursor-pointer transition-all duration-300 font-bold shadow-sm text-sm
                         ${selected
                           ? 'bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-500 text-indigo-700 shadow-md shadow-indigo-500/10 -translate-y-0.5'
                           : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-md'}`}
@@ -255,7 +255,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`flex-1 sm:flex-none px-5 py-2 rounded-lg font-bold text-white shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 text-xs tracking-wide
+            className={`flex-1 sm:flex-none px-5 py-2.5 rounded-lg font-bold text-white shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 text-sm tracking-wide
               ${isSubmitting
                 ? 'bg-slate-400 cursor-not-allowed shadow-none'
                 : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 hover:from-indigo-700 hover:via-blue-700 hover:to-indigo-700 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/30 active:translate-y-0 active:shadow-md bg-[length:200%_auto] hover:bg-right'}`}
@@ -282,7 +282,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
             type="button"
             onClick={() => setShowResetModal(true)}
             disabled={isSubmitting}
-            className="px-4 py-2 rounded-lg font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm hover:shadow-md disabled:opacity-50 text-xs"
+            className="px-4 py-2.5 rounded-lg font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm hover:shadow-md disabled:opacity-50 text-sm"
           >
             重新上传
           </button>

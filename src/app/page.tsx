@@ -165,7 +165,7 @@ export default function Home() {
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                第一步：上传与识别
+                上传与识别
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">上传学生证图片，系统将自动提取关键信息</p>
             </div>
@@ -197,7 +197,7 @@ export default function Home() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                  第二步：查看与管理
+                  查看与管理
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">核对学生信息并导出数据</p>
               </div>
