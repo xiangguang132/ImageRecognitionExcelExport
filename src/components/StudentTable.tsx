@@ -19,9 +19,21 @@ interface StudentTableProps {
   students: Student[]
   onDelete: (id: number) => void
   onRefresh: () => void
+  currentPage: number
+  totalCount: number
+  pageSize: number
+  onPageChange: (page: number) => void
 }
 
-export default function StudentTable({ students, onDelete, onRefresh }: StudentTableProps) {
+export default function StudentTable({
+  students,
+  onDelete,
+  onRefresh,
+  currentPage,
+  totalCount,
+  pageSize,
+  onPageChange
+}: StudentTableProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -172,6 +184,31 @@ export default function StudentTable({ students, onDelete, onRefresh }: StudentT
           </tbody>
         </table>
       </div>
+
+      {/* 分页控制 */}
+      {totalCount > 0 && (
+        <div className="flex items-center justify-between pt-4">
+          <div className="text-sm text-gray-600">
+            共 {totalCount} 条记录，当前第 {currentPage} / {Math.ceil(totalCount / pageSize)} 页
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              上一页
+            </button>
+            <button
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+              className="px-3 py-1 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      )}
 
       <Modal
         isOpen={showDeleteModal}
