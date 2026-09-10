@@ -1,0 +1,24 @@
+// 学生证信息管理平台 - 数据库模型
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id                 Int      @id @default(autoincrement())
+  studentId          String?  @map("student_id")       // 学号
+  name               String?                           // 姓名
+  email              String?                           // 邮箱
+  major              String?                           // 专业
+  role               String?                           // 角色
+  interestDirection  String?  @map("interest_direction") // 未来兴趣方向（项目/研究）
+  interestTopic      String?  @map("interest_topic")    // 意向参与主题
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("students")
+}
