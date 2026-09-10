@@ -299,7 +299,7 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
         <div className="space-y-6">
           <div className="flex justify-center -mt-2 mb-4">
             <div className="w-40 h-40">
-              <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/product_hunt.svg" alt="Product Hunt Illustration" className="w-full h-full object-contain drop-shadow-md" />
+              <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Product Hunt Illustration" className="w-full h-full object-contain drop-shadow-md" />
             </div>
           </div>
           <p className="text-slate-600 font-medium text-center">

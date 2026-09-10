@@ -117,11 +117,11 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
           <div className="space-y-6 py-4">
             {isDragActive ? (
               <div className="w-64 h-48 mx-auto animate-bounce">
-                <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/typewriter.svg" alt="Typewriter Illustration" className="w-full h-full object-contain drop-shadow-xl opacity-90" />
+                <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Upload Warning Illustration" className="w-full h-full object-contain drop-shadow-xl opacity-90" />
               </div>
             ) : (
               <div className="w-64 h-48 mx-auto">
-                <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/not_found.svg" alt="Upload Illustration" className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition-transform duration-500" />
+                <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Upload Illustration" className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition-transform duration-500" />
               </div>
             )}
             <div className="space-y-2">

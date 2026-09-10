@@ -163,7 +163,7 @@ export default function StudentTable({
                 <td colSpan={9} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center justify-center space-y-4 text-slate-400">
                     <div className="w-64 h-48">
-                      <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/empty.svg" alt="Empty Illustration" className="w-full h-full object-contain drop-shadow-sm opacity-90" />
+                      <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Empty Illustration" className="w-full h-full object-contain drop-shadow-sm opacity-90" />
                     </div>
                     <div className="space-y-1">
                       <p className="font-bold text-slate-500 text-lg">暂无数据</p>
@@ -272,7 +272,7 @@ export default function StudentTable({
       >
         <div className="flex flex-col items-center text-center py-2">
           <div className="w-48 h-40 mb-2">
-            <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/confirm.svg" alt="Confirm Illustration" className="w-full h-full object-contain drop-shadow-md" />
+            <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Confirm Illustration" className="w-full h-full object-contain drop-shadow-md" />
           </div>
           <p className="text-slate-700 font-bold text-lg">
             确定要删除这条记录吗？
@@ -294,7 +294,7 @@ export default function StudentTable({
         >
           <div className="flex flex-col items-center text-center py-2">
             <div className="w-48 h-40 mb-2">
-              <img src="https://raw.githubusercontent.com/undraw/undraw/refs/heads/master/svg/credits.svg" alt="Alert Illustration" className="w-full h-full object-contain drop-shadow-md" />
+              <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Alert Illustration" className="w-full h-full object-contain drop-shadow-md" />
             </div>
             <p className="text-slate-700 font-bold text-lg">{alertModal.message}</p>
           </div>
