@@ -1,7 +1,6 @@
 'use client'
 
-import { useCallback, useState, useEffect } from 'react'
-import { useDropzone } from 'react-dropzone'
+import { useState, useEffect, useRef, DragEvent } from 'react'
 import Modal from '@/components/ui/Modal'
 
 interface ImageUploaderProps {
@@ -11,28 +10,64 @@ interface ImageUploaderProps {
   shouldClear: boolean
 }
 
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/bmp', 'image/gif']
+
 export default function ImageUploader({ onImageUpload, onClear, isLoading, shouldClear }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [isDragActive, setIsDragActive] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const dragCounterRef = useRef(0)
 
-  // 当 shouldClear 变为 true 时，清除预览
   useEffect(() => {
-    if (shouldClear) {
-      setPreview(null)
-    }
+    if (shouldClear) setPreview(null)
   }, [shouldClear])
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-      onImageUpload(file)
-    }
-  }, [onImageUpload])
+  const processFile = (file: File) => {
+    if (!ACCEPTED_TYPES.includes(file.type)) return
+    const reader = new FileReader()
+    reader.onload = () => setPreview(reader.result as string)
+    reader.readAsDataURL(file)
+    onImageUpload(file)
+  }
+
+  // --- 拖拽 ---
+  const handleDragEnter = (e: DragEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    dragCounterRef.current++
+    if (e.dataTransfer.types.includes('Files')) setIsDragActive(true)
+  }
+  const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    dragCounterRef.current--
+    if (dragCounterRef.current === 0) setIsDragActive(false)
+  }
+  const handleDragOver = (e: DragEvent) => { e.preventDefault(); e.stopPropagation() }
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    dragCounterRef.current = 0; setIsDragActive(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) processFile(file)
+  }
+
+  // --- 弹窗按钮回调 ---
+  const handleChooseFileUpload = () => {
+    setShowUploadModal(false)
+    setTimeout(() => fileInputRef.current?.click(), 200)
+  }
+
+  const handleChooseCamera = () => {
+    setShowUploadModal(false)
+    setTimeout(() => cameraInputRef.current?.click(), 200)
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) processFile(file)
+    e.target.value = ''
+  }
 
   const handleRemoveImage = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -40,32 +75,25 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
   }
 
   const confirmRemoveImage = () => {
-    setPreview(null)
-    onClear?.()
-    setShowDeleteModal(false)
+    setPreview(null); onClear?.(); setShowDeleteModal(false)
   }
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.bmp', '.gif']
-    },
-    multiple: false,
-    disabled: isLoading
-  })
 
   return (
     <div className="w-full">
+      {/* ===== 上传区域（只管拖拽 + 点击弹窗） ===== */}
       <div
-        {...getRootProps()}
-        className={`relative border-2 border-dashed rounded-[1.5rem] p-8 text-center cursor-pointer transition-all duration-300
+        onClick={() => { if (!isLoading && !preview) setShowUploadModal(true) }}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className={`relative border-2 border-dashed rounded-[1.5rem] p-8 text-center transition-all duration-300
+          ${!preview ? 'cursor-pointer' : ''}
           ${isDragActive
             ? 'border-indigo-500 bg-indigo-50/50 shadow-inner shadow-indigo-100 scale-[1.01]'
             : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-lg hover:shadow-slate-100/50'}
-          ${isLoading ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''}`}
+          ${isLoading ? 'opacity-60 pointer-events-none' : ''}`}
       >
-        <input {...getInputProps()} />
-
         {/* 右上角删除按钮 */}
         {preview && !isLoading && (
           <button
@@ -83,12 +111,8 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
         {preview ? (
           <div className="space-y-4">
             <div className="relative group w-full max-w-sm mx-auto">
-              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <img
-                src={preview}
-                alt="预览"
-                className="relative w-full max-h-48 object-contain rounded-2xl shadow-xl ring-1 ring-slate-900/5"
-              />
+              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+              <img src={preview} alt="预览" className="relative w-full max-h-48 object-contain rounded-2xl shadow-xl ring-1 ring-slate-900/5" />
             </div>
             {isLoading ? (
               <div className="flex flex-col items-center gap-2">
@@ -106,37 +130,98 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
               </div>
             ) : (
               <p className="text-slate-500 font-medium text-xs bg-white/50 inline-block px-3 py-1.5 rounded-full border border-slate-100">
-                点击或拖拽图片到此处更换
+                点击更换图片，或拖拽新图片到此处
               </p>
             )}
           </div>
         ) : (
           <div className="space-y-4 py-2">
             {isDragActive ? (
-              <div className="w-48 h-36 mx-auto animate-bounce">
-                <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Upload Warning Illustration" className="w-full h-full object-contain drop-shadow-xl opacity-90" />
-              </div>
-            ) : (
-              <div className="w-48 h-36 mx-auto">
-                <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Upload Illustration" className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition-transform duration-500" />
-              </div>
-            )}
-            <div className="space-y-1">
-              {isDragActive ? (
+              <>
+                <div className="w-48 h-36 mx-auto animate-bounce">
+                  <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="" className="w-full h-full object-contain drop-shadow-xl opacity-90" />
+                </div>
                 <p className="text-indigo-600 font-bold text-base">松开鼠标上传图片</p>
-              ) : (
-                <>
-                  <p className="text-slate-700 font-bold text-base">点击或拖拽学生证图片到此处</p>
-                  <p className="text-xs text-slate-400 font-medium">
-                    支持 JPG, PNG, BMP 格式，建议分辨率不低于 800px
-                  </p>
-                </>
-              )}
-            </div>
+              </>
+            ) : (
+              <>
+                <div className="w-48 h-36 mx-auto">
+                  <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="" className="w-full h-full object-contain drop-shadow-md" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-slate-700 font-bold text-base">点击上传学生证图片</p>
+                  <p className="text-xs text-slate-400 font-medium">支持 JPG, PNG, BMP 格式，或直接拖拽图片到此处</p>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
 
+      {/* ===== 隐藏 input（在上传区域外部，避免事件冒泡干扰） ===== */}
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileInputChange} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileInputChange} />
+
+      {/* ===== 上传方式选择弹窗（在上传区域外部，点击不会冒泡到上传区） ===== */}
+      {showUploadModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowUploadModal(false)}
+        >
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+          <div
+            className="relative bg-white rounded-[1.5rem] shadow-2xl w-full max-w-[360px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 pt-5 pb-3 flex justify-between items-center">
+              <h3 className="text-base font-bold text-slate-900">选择上传方式</h3>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 pb-5 space-y-2">
+              <button
+                type="button"
+                onClick={handleChooseFileUpload}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all group text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-200 transition-colors shrink-0">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800">选择图片</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">从手机相册或电脑文件夹中选取</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={handleChooseCamera}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-200 transition-colors shrink-0">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800">拍照上传</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">直接打开相机拍摄学生证</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== 删除确认弹窗 ===== */}
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -157,12 +242,8 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
               </g>
             </svg>
           </div>
-          <p className="text-slate-700 font-bold text-lg">
-            确定要删除当前预览的图片吗？
-          </p>
-          <p className="text-sm text-slate-500 mt-2">
-            删除图片后，已识别的文本信息并不会被清除。
-          </p>
+          <p className="text-slate-700 font-bold text-lg">确定要删除当前预览的图片吗？</p>
+          <p className="text-sm text-slate-500 mt-2">删除图片后，已识别的文本信息并不会被清除。</p>
         </div>
       </Modal>
     </div>

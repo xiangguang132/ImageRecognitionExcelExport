@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react'
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm?: () => void
   title: string
   children: React.ReactNode
   confirmText?: string
@@ -18,7 +18,7 @@ export default function Modal({
   onConfirm,
   title,
   children,
-  confirmText = '确认',
+  confirmText = '',
   cancelText = '取消'
 }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -59,11 +59,11 @@ export default function Modal({
       ref={dialogRef}
       onClose={handleClose}
       onCancel={handleCancel}
-      className="backdrop:bg-slate-900/40 backdrop-blur-sm p-0 rounded-[2rem] shadow-2xl w-full max-w-[480px] overflow-hidden m-auto border border-slate-100/50 animate-in fade-in zoom-in-95 duration-200"
+      className="backdrop:bg-slate-900/40 backdrop-blur-sm p-0 rounded-[2rem] shadow-2xl w-full max-w-[480px] max-h-[90dvh] flex flex-col overflow-hidden m-auto border border-slate-100/50 animate-in fade-in zoom-in-95 duration-200"
     >
-      <div className="bg-white">
+      <div className="bg-white flex flex-col min-h-0">
         {/* Header */}
-        <div className="px-8 pt-8 pb-4 flex justify-between items-start">
+        <div className="px-8 pt-8 pb-4 flex justify-between items-start flex-shrink-0">
           <h3 className="text-xl font-black text-slate-900 tracking-tight">{title}</h3>
           <button
             onClick={onClose}
@@ -76,12 +76,12 @@ export default function Modal({
         </div>
 
         {/* Content */}
-        <div className="px-8 py-4 text-slate-600 leading-relaxed">
+        <div className="px-8 py-4 text-slate-600 leading-relaxed overflow-y-auto min-h-0 flex-1">
           {children}
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
+        <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
           {cancelText && (
             <button
               onClick={onClose}
@@ -90,12 +90,14 @@ export default function Modal({
               {cancelText}
             </button>
           )}
-          <button
-            onClick={handleConfirm}
-            className="px-6 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all shadow-md hover:shadow-lg active:translate-y-0.5"
-          >
-            {confirmText}
-          </button>
+          {confirmText && (
+            <button
+              onClick={handleConfirm}
+              className="px-6 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all shadow-md hover:shadow-lg active:translate-y-0.5"
+            >
+              {confirmText}
+            </button>
+          )}
         </div>
       </div>
     </dialog>
