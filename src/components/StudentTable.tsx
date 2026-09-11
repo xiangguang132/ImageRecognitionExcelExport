@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Modal from '@/components/ui/Modal'
+import { toast } from '@/components/ui/Toast'
 
 export interface Student {
   id: number
@@ -42,7 +43,7 @@ export default function StudentTable({
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
-  const [alertModal, setAlertModal] = useState<{ title: string; message: string } | null>(null)
+  const [showExportModal, setShowExportModal] = useState(false)
 
   // 编辑状态
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
@@ -66,7 +67,12 @@ export default function StudentTable({
     prevLoadingRef.current = isLoading
   }, [isLoading])
 
+  const handleExportClick = () => {
+    setShowExportModal(true)
+  }
+
   const handleExport = async () => {
+    setShowExportModal(false)
     setIsExporting(true)
     try {
       const response = await fetch('/api/export')
@@ -83,8 +89,9 @@ export default function StudentTable({
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
+      toast.success('导出成功')
     } catch (error) {
-      setAlertModal({ title: '导出错误', message: '导出失败，请重试' })
+      toast.error('导出失败，请重试')
     } finally {
       setIsExporting(false)
     }
@@ -109,9 +116,10 @@ export default function StudentTable({
         throw new Error('删除失败')
       }
 
+      toast.success('删除成功')
       onDelete(pendingDeleteId)
     } catch (error) {
-      setAlertModal({ title: '删除错误', message: '删除失败，请重试' })
+      toast.error('删除失败，请重试')
     } finally {
       setDeletingId(null)
       setPendingDeleteId(null)
@@ -152,7 +160,7 @@ export default function StudentTable({
     if (!editingStudent) return
 
     if (!editForm.studentId?.trim() || !editForm.name?.trim()) {
-      setAlertModal({ title: '校验失败', message: '学号和姓名不能为空' })
+      toast.error('学号和姓名不能为空')
       return
     }
 
@@ -171,9 +179,9 @@ export default function StudentTable({
       const updated = await response.json()
       onEdit(editingStudent.id, updated)
       setEditingStudent(null)
-      setAlertModal({ title: '保存成功', message: '学生信息已更新' })
+      toast.success('编辑成功')
     } catch (error) {
-      setAlertModal({ title: '保存失败', message: '更新学生信息失败，请重试' })
+      toast.error('更新学生信息失败，请重试')
     } finally {
       setIsSaving(false)
     }
@@ -205,7 +213,7 @@ export default function StudentTable({
           </button>
 
           <button
-            onClick={handleExport}
+            onClick={handleExportClick}
             disabled={isExporting || students.length === 0}
             className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold text-white rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5
               ${isExporting || students.length === 0
@@ -402,23 +410,26 @@ export default function StudentTable({
         </div>
       </Modal>
 
-      {alertModal && (
-        <Modal
-          isOpen={!!alertModal}
-          onClose={() => setAlertModal(null)}
-          onConfirm={() => setAlertModal(null)}
-          title={alertModal.title}
-          confirmText="我知道了"
-          cancelText=""
-        >
-          <div className="flex flex-col items-center text-center py-2">
-            <div className="w-32 h-28 mb-1">
-              <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Alert Illustration" className="w-full h-full object-contain drop-shadow-md" />
-            </div>
-            <p className="text-slate-700 font-bold text-sm">{alertModal.message}</p>
+      <Modal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={handleExport}
+        title="确认导出"
+        confirmText="确认导出"
+        cancelText="取消"
+      >
+        <div className="flex flex-col items-center text-center py-2">
+          <div className="w-28 h-24 mb-1">
+            <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Export Illustration" className="w-full h-full object-contain drop-shadow-md" />
           </div>
-        </Modal>
-      )}
+          <p className="text-slate-700 font-bold text-sm">
+            确定要导出当前数据为 Excel 文件吗？
+          </p>
+          <p className="text-xs text-slate-500 mt-1">
+            将导出所有未删除的学生记录。
+          </p>
+        </div>
+      </Modal>
 
       {/* 编辑弹窗 */}
       <Modal

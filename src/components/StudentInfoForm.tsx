@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { StudentInfo, cleanStudentId, generateEmail } from '@/lib/recognize'
 import Modal from '@/components/ui/Modal'
+import { toast } from '@/components/ui/Toast'
 
 interface StudentInfoFormProps {
   initialData: StudentInfo | null
@@ -27,10 +28,12 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
 
-  // 当识别结果返回时，更新表单
+  // 当识别结果返回时，更新表单；当识别结果清空时，重置表单
   useEffect(() => {
     if (initialData) {
       setFormData(initialData)
+    } else {
+      setFormData(emptyForm)
     }
   }, [initialData])
 
@@ -95,6 +98,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
   const handleReset = () => {
     setFormData(emptyForm)
     onReset()
+    toast.success('重置成功')
   }
 
   const summaryItems = [

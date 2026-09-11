@@ -7,13 +7,13 @@ import VoiceRecorder from '@/components/VoiceRecorder'
 import StudentTable, { Student } from '@/components/StudentTable'
 import { recognizeWithAI, StudentInfo } from '@/lib/recognize'
 import { recognizeVoiceWithAI } from '@/lib/voice'
+import Toast, { toast } from '@/components/ui/Toast'
 
 export default function Home() {
   const [students, setStudents] = useState<Student[]>([])
   const [recognizeData, setRecognizeData] = useState<StudentInfo | null>(null)
   const [isRecognizing, setIsRecognizing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [statusMessage, setStatusMessage] = useState('')
   const [clearImage, setClearImage] = useState(false)
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false)
   const [isVoiceRecognizing, setIsVoiceRecognizing] = useState(false)
@@ -44,16 +44,15 @@ export default function Home() {
   // 图片上传并识别
   const handleImageUpload = async (file: File) => {
     setIsRecognizing(true)
-    setStatusMessage('正在使用 AI 识别学生证...')
     setRecognizeData(null)
 
     try {
       const info = await recognizeWithAI(file)
-      setStatusMessage('✅ AI 识别完成，请核对以下信息')
+      toast.success('AI 识别完成，请核对以下信息')
       setRecognizeData(info)
     } catch (error: any) {
       console.error('[页面] ❌ 识别失败:', error)
-      setStatusMessage(`❌ 识别失败: ${error.message || '请重试'}`)
+      toast.error(`识别失败: ${error.message || '请重试'}`)
     } finally {
       setIsRecognizing(false)
     }
@@ -62,15 +61,14 @@ export default function Home() {
   // 语音录制完成并识别
   const handleVoiceRecordingComplete = async (audioBlob: Blob) => {
     setIsVoiceRecognizing(true)
-    setStatusMessage('正在使用 AI 语音识别...')
 
     try {
       const info = await recognizeVoiceWithAI(audioBlob)
-      setStatusMessage('✅ 语音识别完成，请核对以下信息')
+      toast.success('语音识别完成，请核对以下信息')
       setRecognizeData(info)
     } catch (error: any) {
       console.error('[页面] 语音识别失败:', error)
-      setStatusMessage(`❌ 语音识别失败: ${error.message || '请重试'}`)
+      toast.error(`语音识别失败: ${error.message || '请重试'}`)
     } finally {
       setIsVoiceRecognizing(false)
     }
@@ -79,7 +77,6 @@ export default function Home() {
   // 提交学生信息
   const handleSubmit = async (data: StudentInfo) => {
     setIsSubmitting(true)
-    setStatusMessage('')
 
     try {
       const response = await fetch('/api/students', {
@@ -94,15 +91,19 @@ export default function Home() {
         throw new Error('提交失败')
       }
 
-      setStatusMessage('✅ 提交成功！')
+      toast.success('提交信息成功')
       setRecognizeData(null)
 
       // 提交成功后回到第一页并刷新
       setCurrentPage(1)
       await fetchStudents(1)
+
+      // 重置表单和图片
+      setClearImage(true)
+      setTimeout(() => setClearImage(false), 100)
     } catch (error) {
       console.error('提交失败:', error)
-      setStatusMessage('❌ 提交失败，请重试')
+      toast.error('提交失败，请重试')
     } finally {
       setIsSubmitting(false)
     }
@@ -112,7 +113,6 @@ export default function Home() {
   const handleFormReset = () => {
     setClearImage(true)
     setRecognizeData(null)
-    setStatusMessage('')
     // 重置 trigger，以便下次还能触发
     setTimeout(() => setClearImage(false), 100)
   }
@@ -124,14 +124,12 @@ export default function Home() {
     } else {
       fetchStudents(currentPage)
     }
-    setStatusMessage('✅ 删除成功')
   }
 
   const handleEdit = (id: number, updated: Partial<Student>) => {
     setStudents(prev =>
       prev.map(s => (s.id === id ? { ...s, ...updated } : s))
     )
-    setStatusMessage('✅ 学生信息已更新')
   }
 
   return (
@@ -168,22 +166,6 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* 状态消息 */}
-        {statusMessage && (
-          <div className={`p-3 rounded-xl border flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 ${
-            statusMessage.includes('✅')
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
-              : statusMessage.includes('❌')
-                ? 'bg-rose-50 text-rose-700 border-rose-200/60'
-                : statusMessage.includes('⚠️')
-                  ? 'bg-amber-50 text-amber-700 border-amber-200/60'
-                  : 'bg-blue-50 text-blue-700 border-blue-200/60'
-          }`}>
-            <span className="text-lg">{statusMessage.split(' ')[0]}</span>
-            <span className="font-medium text-sm">{statusMessage.substring(statusMessage.indexOf(' ') + 1)}</span>
-          </div>
-        )}
-
         {/* 上传区域 + 表单 */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-5 sm:p-6 space-y-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -263,6 +245,7 @@ export default function Home() {
               setIsRefreshing(true)
               await fetchStudents(currentPage)
               setIsRefreshing(false)
+              toast.success('刷新数据成功')
             }}
             currentPage={currentPage}
             totalCount={totalCount}
@@ -287,6 +270,7 @@ export default function Home() {
           </p>
         </div>
       </footer>
+      <Toast />
     </div>
   )
 }
