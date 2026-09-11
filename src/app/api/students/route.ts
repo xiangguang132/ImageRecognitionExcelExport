@@ -12,13 +12,14 @@ export async function GET(request: NextRequest) {
 
     const [students, totalCount] = await prisma.$transaction([
       prisma.student.findMany({
+        where: { isDel: 0 },
         orderBy: {
           createdAt: 'desc'
         },
         skip,
         take: pageSize
       }),
-      prisma.student.count()
+      prisma.student.count({ where: { isDel: 0 } })
     ])
 
     return NextResponse.json({ data: students, totalCount })

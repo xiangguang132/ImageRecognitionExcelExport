@@ -225,6 +225,7 @@ export default function Home() {
             onSubmit={handleSubmit}
             onReset={handleFormReset}
             isSubmitting={isSubmitting}
+            isRecognizing={isRecognizing || isVoiceRecognizing}
           />
 
           {/* 语音录制弹窗 */}

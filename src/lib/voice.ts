@@ -50,10 +50,10 @@ export async function recognizeVoiceWithAI(audioBlob: Blob): Promise<StudentInfo
     studentId: cleanId,
     name: data.name || '',
     email: email,
-    major: '',
+    major: data.major || '',
     role: data.role ? mapRole(data.role) : '',
-    interestDirection: '',
-    interestTopic: ''
+    interestDirection: data.interestDirection || '',
+    interestTopic: data.interestTopic || ''
   }
 
   console.log('[前端] ===== 语音识别提取结果 =====')
@@ -61,10 +61,10 @@ export async function recognizeVoiceWithAI(audioBlob: Blob): Promise<StudentInfo
     学号: info.studentId || '(空)',
     姓名: info.name || '(空)',
     邮箱: info.email || '(空)',
-    专业: info.major || '(空，需手动填写)',
+    专业: info.major || '(空)',
     角色: info.role || '(空)',
-    兴趣方向: info.interestDirection || '(空，需手动选择)',
-    意向主题: info.interestTopic || '(空，需手动填写)'
+    兴趣方向: info.interestDirection || '(空)',
+    意向主题: info.interestTopic || '(空)'
   })
 
   return info

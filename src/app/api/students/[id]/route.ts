@@ -21,7 +21,7 @@ export async function PUT(
     const { studentId: newStudentId, name, email, major, role, interestDirection, interestTopic } = body
 
     const updated = await prisma.student.update({
-      where: { id: studentId },
+      where: { id: studentId, isDel: 0 },
       data: {
         studentId: newStudentId ?? undefined,
         name: name ?? undefined,
@@ -65,10 +65,9 @@ export async function DELETE(
       )
     }
 
-    await prisma.student.delete({
-      where: {
-        id: studentId
-      }
+    await prisma.student.update({
+      where: { id: studentId },
+      data: { isDel: 1 }
     })
 
     return NextResponse.json({ message: '删除成功' })

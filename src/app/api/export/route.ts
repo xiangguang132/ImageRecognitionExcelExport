@@ -7,6 +7,7 @@ export async function GET() {
   try {
     // 获取所有学生数据
     const students = await prisma.student.findMany({
+      where: { isDel: 0 },
       orderBy: {
         createdAt: 'desc'
       }

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS students (
   role VARCHAR(50) COMMENT '角色（如 學生/STUDENT）',
   interest_direction VARCHAR(100) COMMENT '未来兴趣方向（项目/研究，可多选，逗号分隔）',
   interest_topic VARCHAR(500) COMMENT '意向参与主题',
+  is_del TINYINT NOT NULL DEFAULT 0 COMMENT '软删除标记：0-未删除 1-已删除',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学生证信息表';

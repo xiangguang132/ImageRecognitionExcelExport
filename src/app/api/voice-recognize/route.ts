@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
                 },
                 {
                   type: 'text',
-                  text: `你是一个学生证信息语音提取助手。用户会用语音自我介绍，包含学号、姓名、角色等信息。
+                  text: `你是一个学生证信息语音提取助手。用户会用语音自我介绍，包含学号、姓名、专业、角色、兴趣方向、意向主题等信息。
 请仔细听语音内容，从中提取学生证相关信息。
 
 要求：
@@ -80,20 +80,25 @@ export async function POST(request: NextRequest) {
 {
   "studentId": "学号（如 A-C2-0130-1 或 AC201301）",
   "name": "姓名（繁体中文）",
-  "role": "角色（如 STUDENT、TEACHER 等）"
+  "major": "专业名称（繁体中文）",
+  "role": "角色（如 STUDENT、TEACHER 等）",
+  "interestDirection": "兴趣方向，可能包含"项目"或"研究"，用逗号分隔，如"项目,研究"或"项目"",
+  "interestTopic": "意向参与主题（繁体中文）"
 }
 
 注意：
 - 请准确识别学号，包括字母、数字和连字符
 - 如果用户说了"学生"或"student"，role 填 "STUDENT"
 - 如果用户说了"教师"或"teacher"，role 填 "TEACHER"
+- 如果用户提到"项目"方向，interestDirection 包含"项目"
+- 如果用户提到"研究"方向，interestDirection 包含"研究"
 - 如果某个字段没有在语音中提到，返回空字符串 ""
 - 只返回 JSON，不要返回任何其他文字`
                 }
               ]
             }
           ],
-          max_tokens: 500
+          max_tokens: 800
         })
       }
     )

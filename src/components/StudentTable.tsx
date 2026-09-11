@@ -397,7 +397,7 @@ export default function StudentTable({
             确定要删除这条记录吗？
           </p>
           <p className="text-xs text-slate-500 mt-1">
-            此操作不可撤销，数据将永久移除。
+            记录将从列表中隐藏，数据保留在数据库中，导出时不会包含此记录。
           </p>
         </div>
       </Modal>

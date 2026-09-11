@@ -17,6 +17,7 @@ model Student {
   role               String?                           // 角色
   interestDirection  String?  @map("interest_direction") // 未来兴趣方向（项目/研究）
   interestTopic      String?  @map("interest_topic")    // 意向参与主题
+  isDel              Int      @default(0) @map("is_del") // 软删除标记：0-未删除 1-已删除
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 

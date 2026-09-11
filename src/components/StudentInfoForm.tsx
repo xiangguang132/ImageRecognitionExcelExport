@@ -9,6 +9,7 @@ interface StudentInfoFormProps {
   onSubmit: (data: StudentInfo) => void
   onReset: () => void
   isSubmitting: boolean
+  isRecognizing?: boolean
 }
 
 const emptyForm: StudentInfo = {
@@ -21,7 +22,7 @@ const emptyForm: StudentInfo = {
   interestTopic: ''
 }
 
-export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubmitting }: StudentInfoFormProps) {
+export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubmitting, isRecognizing = false }: StudentInfoFormProps) {
   const [formData, setFormData] = useState<StudentInfo>(emptyForm)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
@@ -44,6 +45,22 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  // 邮箱失焦时确保后缀存在
+  const handleEmailBlur = () => {
+    const suffix = '@connect.um.edu.mo'
+    const val = formData.email.trim()
+    if (!val) {
+      // 空值则从学号重新生成
+      const cleanId = cleanStudentId(formData.studentId)
+      if (cleanId) {
+        setFormData(prev => ({ ...prev, email: generateEmail(cleanId) }))
+      }
+    } else if (!val.includes('@')) {
+      // 用户只输了前缀，补上后缀
+      setFormData(prev => ({ ...prev, email: val + suffix }))
+    }
   }
 
   const handleInterestToggle = (option: '项目' | '研究') => {
@@ -92,7 +109,24 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <form onSubmit={handleSubmit} className={`space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 relative ${isRecognizing ? 'pointer-events-none' : ''}`}>
+        {/* AI 识别中遮罩 */}
+        {isRecognizing && (
+          <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-3 border border-indigo-100/50">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-bold text-indigo-700">AI 正在识别中...</p>
+              <p className="text-xs text-slate-500 mt-0.5">请稍候，表单已暂时锁定</p>
+            </div>
+          </div>
+        )}
         <div className="bg-slate-50/50 rounded-2xl p-4 sm:p-5 border border-slate-100/50 shadow-inner">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
@@ -186,8 +220,8 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">04</span> 邮箱地址
-                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 uppercase tracking-widest border border-slate-200">
-                  自动生成
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 uppercase tracking-widest border border-rose-100">
+                  必填
                 </span>
               </label>
               <div className="relative group">
@@ -195,8 +229,9 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                   type="text"
                   name="email"
                   value={formData.email}
-                  readOnly
-                  className="w-full pl-2.5 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-600 cursor-not-allowed shadow-sm"
+                  onChange={handleChange}
+                  onBlur={handleEmailBlur}
+                  className="w-full pl-2.5 pr-10 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                   placeholder="输入学号后自动生成"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-serif italic font-bold text-[10px]">
@@ -287,9 +322,9 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
         <div className="flex flex-col sm:flex-row gap-2 pt-1">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRecognizing}
             className={`flex-1 sm:flex-none px-5 py-2.5 rounded-lg font-bold text-white shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 text-sm tracking-wide
-              ${isSubmitting
+              ${isSubmitting || isRecognizing
                 ? 'bg-slate-400 cursor-not-allowed shadow-none'
                 : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 hover:from-indigo-700 hover:via-blue-700 hover:to-indigo-700 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/30 active:translate-y-0 active:shadow-md bg-[length:200%_auto] hover:bg-right'}`}
           >
@@ -314,7 +349,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
           <button
             type="button"
             onClick={() => setShowResetModal(true)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRecognizing}
             className="px-4 py-2.5 rounded-lg font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm hover:shadow-md disabled:opacity-50 text-sm"
           >
             重新上传
