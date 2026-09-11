@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { StudentInfo } from '@/lib/ocr'
+import { StudentInfo, cleanStudentId, generateEmail } from '@/lib/recognize'
 import Modal from '@/components/ui/Modal'
 
-interface OcrFormProps {
+interface StudentInfoFormProps {
   initialData: StudentInfo | null
   onSubmit: (data: StudentInfo) => void
   onReset: () => void
@@ -21,17 +21,25 @@ const emptyForm: StudentInfo = {
   interestTopic: ''
 }
 
-export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }: OcrFormProps) {
+export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubmitting }: StudentInfoFormProps) {
   const [formData, setFormData] = useState<StudentInfo>(emptyForm)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
 
-  // 当 OCR 结果返回时，更新表单
+  // 当识别结果返回时，更新表单
   useEffect(() => {
     if (initialData) {
       setFormData(initialData)
     }
   }, [initialData])
+
+  // 学号变化时自动更新邮箱
+  useEffect(() => {
+    const cleanId = cleanStudentId(formData.studentId)
+    if (cleanId) {
+      setFormData(prev => ({ ...prev, email: generateEmail(cleanId) }))
+    }
+  }, [formData.studentId])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -52,6 +60,13 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // 校验未来兴趣方向（复选框，HTML required 无法覆盖）
+    if (!formData.interestDirection) {
+      alert('请至少选择一个未来兴趣方向')
+      return
+    }
+
     setShowConfirmModal(true)
   }
 
@@ -65,19 +80,15 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
     onReset()
   }
 
-  if (!initialData) {
-    return null
-  }
-
   const summaryItems = [
     { label: '学号', value: formData.studentId },
     { label: '姓名', value: formData.name },
     { label: '邮箱', value: formData.email },
-    { label: '专业', value: formData.major || '（未填写）' },
+    { label: '专业', value: formData.major },
     { label: '角色', value: formData.role },
     { label: '兴趣方向', value: formData.interestDirection },
     { label: '意向主题', value: formData.interestTopic },
-  ].filter(item => item.value)
+  ]
 
   return (
     <>
@@ -104,6 +115,9 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">01</span> 学号
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 uppercase tracking-widest border border-rose-100">
+                  必填
+                </span>
               </label>
               <div className="relative group">
                 <input
@@ -111,7 +125,8 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
                   name="studentId"
                   value={formData.studentId}
                   onChange={handleChange}
-                  className="w-full pl-2.5 pr-16 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm group-hover:shadow-md"
+                  required
+                  className="w-full pl-2.5 pr-16 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm group-hover:shadow-md"
                   placeholder="AC201301"
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
@@ -124,13 +139,17 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">02</span> 姓名
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 uppercase tracking-widest border border-rose-100">
+                  必填
+                </span>
               </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-2.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md"
+                required
+                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="请输入姓名"
               />
             </div>
@@ -139,13 +158,17 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">03</span> 身份角色
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 uppercase tracking-widest border border-rose-100">
+                  必填
+                </span>
               </label>
               <div className="relative group">
                 <select
                   name="role"
                   value={formData.role}
                   onChange={handleChange as any}
-                  className="w-full px-2.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm appearance-none group-hover:shadow-md"
+                  required
+                  className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm appearance-none group-hover:shadow-md"
                 >
                   <option value="">请选择角色</option>
                   <option value="student">Student (学生)</option>
@@ -159,19 +182,22 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
               </div>
             </div>
 
-            {/* 邮箱 */}
+            {/* 邮箱 - 根据学号自动生成，不可手动编辑 */}
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">04</span> 邮箱地址
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 uppercase tracking-widest border border-slate-200">
+                  自动生成
+                </span>
               </label>
               <div className="relative group">
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   value={formData.email}
-                  onChange={handleChange}
-                  className="w-full pl-2.5 pr-10 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm group-hover:shadow-md"
-                  placeholder="xxx@connect.um.edu.mo"
+                  readOnly
+                  className="w-full pl-2.5 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-600 cursor-not-allowed shadow-sm"
+                  placeholder="输入学号后自动生成"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-serif italic font-bold text-[10px]">
                   @
@@ -202,13 +228,17 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">06</span> 意向参与主题
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 uppercase tracking-widest border border-rose-100">
+                  必填
+                </span>
               </label>
               <input
                 type="text"
                 name="interestTopic"
                 value={formData.interestTopic}
                 onChange={handleChange}
-                className="w-full px-2.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm hover:shadow-md"
+                required
+                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="例如：基于大模型的代码助手研究"
               />
             </div>
@@ -217,6 +247,9 @@ export default function OcrForm({ initialData, onSubmit, onReset, isSubmitting }
             <div className="space-y-1 md:col-span-3">
               <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase flex items-center gap-1.5">
                 <span className="text-slate-400">07</span> 未来兴趣方向
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 uppercase tracking-widest border border-rose-100">
+                  必填
+                </span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {(['项目', '研究'] as const).map(option => {

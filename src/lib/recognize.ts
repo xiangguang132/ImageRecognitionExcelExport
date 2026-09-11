@@ -1,6 +1,8 @@
 /**
- * OCR 模块
- * 使用千问视觉 API 通过后端 /api/recognize 进行识别
+ * 识别模块
+ * 共享类型定义 + 工具函数
+ * 图片识别：使用千问视觉 API 通过后端 /api/recognize
+ * 语音识别：见 voice.ts
  */
 
 export interface StudentInfo {
@@ -37,10 +39,10 @@ export function generateEmail(studentId: string): string {
 }
 
 /**
- * 角色映射：将 OCR 识别的角色文本转为标准值
+ * 角色映射：将 AI 识别的角色文本转为标准值
  * 支持 "STUDENT 学生" / "TEACHER 教师" 等复杂格式
  */
-function mapRole(raw: string): string {
+export function mapRole(raw: string): string {
   const lowerRaw = raw.toLowerCase()
 
   if (lowerRaw.includes('student') || lowerRaw.includes('学生') || lowerRaw.includes('學生')) {

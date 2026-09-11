@@ -2,19 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import ImageUploader from '@/components/ImageUploader'
-import OcrForm from '@/components/OcrForm'
+import StudentInfoForm from '@/components/StudentInfoForm'
+import VoiceRecorder from '@/components/VoiceRecorder'
 import StudentTable, { Student } from '@/components/StudentTable'
-import { recognizeWithAI, StudentInfo } from '@/lib/ocr'
+import { recognizeWithAI, StudentInfo } from '@/lib/recognize'
+import { recognizeVoiceWithAI } from '@/lib/voice'
 
 export default function Home() {
   const [students, setStudents] = useState<Student[]>([])
-  const [ocrData, setOcrData] = useState<StudentInfo | null>(null)
+  const [recognizeData, setRecognizeData] = useState<StudentInfo | null>(null)
   const [isRecognizing, setIsRecognizing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
   const [clearImage, setClearImage] = useState(false)
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false)
+  const [isVoiceRecognizing, setIsVoiceRecognizing] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const pageSize = 10
 
   // 获取学生列表
@@ -40,17 +45,34 @@ export default function Home() {
   const handleImageUpload = async (file: File) => {
     setIsRecognizing(true)
     setStatusMessage('正在使用 AI 识别学生证...')
-    setOcrData(null)
+    setRecognizeData(null)
 
     try {
       const info = await recognizeWithAI(file)
       setStatusMessage('✅ AI 识别完成，请核对以下信息')
-      setOcrData(info)
+      setRecognizeData(info)
     } catch (error: any) {
       console.error('[页面] ❌ 识别失败:', error)
       setStatusMessage(`❌ 识别失败: ${error.message || '请重试'}`)
     } finally {
       setIsRecognizing(false)
+    }
+  }
+
+  // 语音录制完成并识别
+  const handleVoiceRecordingComplete = async (audioBlob: Blob) => {
+    setIsVoiceRecognizing(true)
+    setStatusMessage('正在使用 AI 语音识别...')
+
+    try {
+      const info = await recognizeVoiceWithAI(audioBlob)
+      setStatusMessage('✅ 语音识别完成，请核对以下信息')
+      setRecognizeData(info)
+    } catch (error: any) {
+      console.error('[页面] 语音识别失败:', error)
+      setStatusMessage(`❌ 语音识别失败: ${error.message || '请重试'}`)
+    } finally {
+      setIsVoiceRecognizing(false)
     }
   }
 
@@ -73,7 +95,7 @@ export default function Home() {
       }
 
       setStatusMessage('✅ 提交成功！')
-      setOcrData(null)
+      setRecognizeData(null)
 
       // 提交成功后回到第一页并刷新
       setCurrentPage(1)
@@ -89,7 +111,7 @@ export default function Home() {
   // 重置表单 + 清除图片
   const handleFormReset = () => {
     setClearImage(true)
-    setOcrData(null)
+    setRecognizeData(null)
     setStatusMessage('')
     // 重置 trigger，以便下次还能触发
     setTimeout(() => setClearImage(false), 100)
@@ -103,6 +125,13 @@ export default function Home() {
       fetchStudents(currentPage)
     }
     setStatusMessage('✅ 删除成功')
+  }
+
+  const handleEdit = (id: number, updated: Partial<Student>) => {
+    setStudents(prev =>
+      prev.map(s => (s.id === id ? { ...s, ...updated } : s))
+    )
+    setStatusMessage('✅ 学生信息已更新')
   }
 
   return (
@@ -125,7 +154,7 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-slate-900">
-                学生证信息管理平台
+                学生证信息录入系统
               </h1>
               <p className="text-[11px] font-medium text-slate-500 tracking-wide uppercase hidden sm:block">
                 Student ID Management System
@@ -157,18 +186,31 @@ export default function Home() {
 
         {/* 上传区域 + 表单 */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-5 sm:p-6 space-y-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                  信息录入
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">上传图片或语音录入，系统将自动提取关键信息</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowVoiceRecorder(true)}
+              disabled={isRecognizing || isVoiceRecognizing}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-bold shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-pink-600 hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all"
+            >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                上传与识别
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">上传学生证图片，系统将自动提取关键信息</p>
-            </div>
+              <span className="hidden sm:inline">语音录入</span>
+            </button>
           </div>
 
           <ImageUploader
@@ -177,12 +219,19 @@ export default function Home() {
             shouldClear={clearImage}
           />
 
-          {/* OCR 识别结果表单 */}
-          <OcrForm
-            initialData={ocrData}
+          {/* 识别结果表单 */}
+          <StudentInfoForm
+            initialData={recognizeData}
             onSubmit={handleSubmit}
             onReset={handleFormReset}
             isSubmitting={isSubmitting}
+          />
+
+          {/* 语音录制弹窗 */}
+          <VoiceRecorder
+            isOpen={showVoiceRecorder}
+            onClose={() => setShowVoiceRecorder(false)}
+            onRecordingComplete={handleVoiceRecordingComplete}
           />
         </div>
 
@@ -207,7 +256,13 @@ export default function Home() {
           <StudentTable
             students={students}
             onDelete={handleDelete}
-            onRefresh={() => fetchStudents(currentPage)}
+            onEdit={handleEdit}
+            isLoading={isRefreshing}
+            onRefresh={async () => {
+              setIsRefreshing(true)
+              await fetchStudents(currentPage)
+              setIsRefreshing(false)
+            }}
             currentPage={currentPage}
             totalCount={totalCount}
             pageSize={pageSize}
