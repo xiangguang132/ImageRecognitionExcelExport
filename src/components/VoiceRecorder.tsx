@@ -10,6 +10,8 @@ interface VoiceRecorderProps {
 
 type RecordingState = 'idle' | 'recording' | 'recorded'
 
+const MAX_DURATION = 60 // 最大录音时长（秒）
+
 // 检测浏览器是否支持录音
 function isRecordingSupported(): boolean {
   return !!(
@@ -148,12 +150,13 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
       // 启动计时器
       timerRef.current = setInterval(() => {
         setElapsedSeconds(prev => {
-          if (prev >= 59) {
-            // 60 秒自动停止
-            stopRecording()
-            return prev
+          const next = prev + 1
+          if (next >= MAX_DURATION) {
+            // 到达最大时长，下一个 tick 自动停止
+            setTimeout(() => stopRecording(), 0)
+            return MAX_DURATION
           }
-          return prev + 1
+          return next
         })
       }, 1000)
     } catch (err: any) {
@@ -234,6 +237,28 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
         <div className="px-6 py-8 flex flex-col items-center gap-5">
           {/* 录音按钮 */}
           <div className="relative">
+            {/* 进度环 */}
+            {state === 'recording' && (
+              <svg
+                className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)]"
+                viewBox="0 0 100 100"
+              >
+                {/* 背景环 */}
+                <circle cx="50" cy="50" r="46" fill="none" stroke="#fecdd3" strokeWidth="3" />
+                {/* 进度环 */}
+                <circle
+                  cx="50" cy="50" r="46"
+                  fill="none"
+                  stroke={elapsedSeconds >= 50 ? '#ef4444' : '#f43f5e'}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 46}`}
+                  strokeDashoffset={`${2 * Math.PI * 46 * (1 - elapsedSeconds / MAX_DURATION)}`}
+                  transform="rotate(-90 50 50)"
+                  className="transition-[stroke-dashoffset] duration-1000 ease-linear"
+                />
+              </svg>
+            )}
             {/* 录音中的脉冲环 */}
             {state === 'recording' && (
               <>
@@ -277,9 +302,10 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
             {state === 'recording' && (
               <>
                 <p className="text-2xl font-mono font-bold text-red-500 tracking-wider">
-                  {formatTime(elapsedSeconds)}
+                  {formatTime(MAX_DURATION - elapsedSeconds)}
                 </p>
                 <p className="text-sm text-slate-500 font-medium">正在录音，点击停止</p>
+                <p className="text-xs text-slate-400">最长 {MAX_DURATION} 秒，到期自动停止</p>
                 <p className="text-xs text-slate-400">录音仅供身份核验，请勿泄露密码等隐私</p>
                 <p className="text-xs text-slate-400">请遵守法律法规，文明发言，禁止侮辱及涉政敏感言论</p>
               </>
