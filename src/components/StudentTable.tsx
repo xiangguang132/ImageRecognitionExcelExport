@@ -173,15 +173,21 @@ export default function StudentTable({
       })
 
       if (!response.ok) {
-        throw new Error('更新失败')
+        // 透出服务端校验错误（格式 / 敏感内容），便于用户直接修正
+        let serverError = '更新学生信息失败，请重试'
+        try {
+          const err = await response.json()
+          if (err?.error) serverError = err.error
+        } catch { /* 忽略解析失败，使用默认提示 */ }
+        throw new Error(serverError)
       }
 
       const updated = await response.json()
       onEdit(editingStudent.id, updated)
       setEditingStudent(null)
       toast.success('编辑成功')
-    } catch (error) {
-      toast.error('更新学生信息失败，请重试')
+    } catch (error: any) {
+      toast.error(error?.message || '更新学生信息失败，请重试')
     } finally {
       setIsSaving(false)
     }

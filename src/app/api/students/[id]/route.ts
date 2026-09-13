@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { validateStudentInput } from '@/lib/validation'
 
 // PUT - 更新学生信息
 export async function PUT(
@@ -19,6 +20,15 @@ export async function PUT(
 
     const body = await request.json()
     const { studentId: newStudentId, name, email, major, role, interestDirection, interestTopic } = body
+
+    // 写入层统一校验（格式 + 敏感内容），拦截后不更新
+    const validation = validateStudentInput(body)
+    if (!validation.ok) {
+      return NextResponse.json(
+        { error: validation.errors[0], errors: validation.errors, fieldErrors: validation.fieldErrors },
+        { status: 400 }
+      )
+    }
 
     const updated = await prisma.student.update({
       where: { id: studentId, isDel: 0 },

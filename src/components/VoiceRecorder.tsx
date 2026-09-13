@@ -280,16 +280,20 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
                   {formatTime(elapsedSeconds)}
                 </p>
                 <p className="text-sm text-slate-500 font-medium">正在录音，点击停止</p>
+                <p className="text-xs text-slate-400">录音仅供身份核验，请勿泄露密码等隐私</p>
+                <p className="text-xs text-slate-400">请遵守法律法规，文明发言，禁止侮辱及涉政敏感言论</p>
               </>
             )}
             {state === 'idle' && (
               <>
                 <p className="text-sm font-bold text-slate-700">点击开始录音</p>
                 <p className="text-xs text-slate-400">请说出学号、姓名等学生证信息</p>
+                <p className="text-xs text-slate-400">录音仅供身份核验，请勿泄露密码等隐私</p>
+                <p className="text-xs text-slate-400">请遵守法律法规，文明发言，禁止侮辱及涉政敏感言论</p>
               </>
             )}
             {state === 'recorded' && (
-              <>
+            <>
                 <p className="text-sm font-bold text-emerald-600">录音完成 ({formatTime(elapsedSeconds)})</p>
                 {audioUrl && (
                   <audio ref={audioRef} src={audioUrl} controls className="mt-2 h-8 w-64" />

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { validateStudentInput } from '@/lib/validation'
 
 // GET - 获取学生信息（支持分页）
 export async function GET(request: NextRequest) {
@@ -36,6 +37,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+
+    // 写入层统一校验（格式 + 敏感内容），拦截后不入库
+    const validation = validateStudentInput(body)
+    if (!validation.ok) {
+      return NextResponse.json(
+        { error: validation.errors[0], errors: validation.errors, fieldErrors: validation.fieldErrors },
+        { status: 400 }
+      )
+    }
 
     const student = await prisma.student.create({
       data: {

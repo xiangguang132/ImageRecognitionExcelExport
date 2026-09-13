@@ -81,9 +81,29 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 校验未来兴趣方向（复选框，HTML required 无法覆盖）
+    // 代码级拦截所有必填字段，统一使用应用内提示，不依赖浏览器原生校验
+    if (!formData.studentId.trim()) {
+      toast.error('请输入学号')
+      return
+    }
+    if (!formData.name.trim()) {
+      toast.error('请输入姓名')
+      return
+    }
+    if (!formData.role) {
+      toast.error('请选择角色')
+      return
+    }
+    if (!formData.major.trim()) {
+      toast.error('请输入专业')
+      return
+    }
     if (!formData.interestDirection) {
-      alert('请至少选择一个未来兴趣方向')
+      toast.error('请至少选择一个未来兴趣方向')
+      return
+    }
+    if (!formData.interestTopic.trim()) {
+      toast.error('请输入意向主题')
       return
     }
 
@@ -163,7 +183,6 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                   name="studentId"
                   value={formData.studentId}
                   onChange={handleChange}
-                  required
                   className="w-full pl-2.5 pr-16 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm group-hover:shadow-md"
                   placeholder="AC201301"
                 />
@@ -186,7 +205,6 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                required
                 className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="请输入姓名"
               />
@@ -205,7 +223,6 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                   name="role"
                   value={formData.role}
                   onChange={handleChange as any}
-                  required
                   className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm appearance-none group-hover:shadow-md"
                 >
                   <option value="">请选择角色</option>
@@ -259,7 +276,6 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 onChange={handleChange}
                 className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="请输入专业名称"
-                required
               />
             </div>
 
@@ -276,7 +292,6 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 name="interestTopic"
                 value={formData.interestTopic}
                 onChange={handleChange}
-                required
                 className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="例如：基于大模型的代码助手研究"
               />

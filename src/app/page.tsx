@@ -88,7 +88,13 @@ export default function Home() {
       })
 
       if (!response.ok) {
-        throw new Error('提交失败')
+        // 透出服务端校验错误（格式 / 敏感内容），而不是笼统的"提交失败"
+        let serverError = '提交失败，请重试'
+        try {
+          const err = await response.json()
+          if (err?.error) serverError = err.error
+        } catch { /* 忽略解析失败，使用默认提示 */ }
+        throw new Error(serverError)
       }
 
       toast.success('提交信息成功')
@@ -101,9 +107,9 @@ export default function Home() {
       // 重置表单和图片
       setClearImage(true)
       setTimeout(() => setClearImage(false), 100)
-    } catch (error) {
+    } catch (error: any) {
       console.error('提交失败:', error)
-      toast.error('提交失败，请重试')
+      toast.error(error?.message || '提交失败，请重试')
     } finally {
       setIsSubmitting(false)
     }
