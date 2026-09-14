@@ -1,4 +1,4 @@
-// 学生证信息录入系统 - 数据库模型
+// 学生证识别系统 - 数据库模型
 generator client {
   provider = "prisma-client-js"
 }

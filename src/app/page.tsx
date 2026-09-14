@@ -158,10 +158,10 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-slate-900">
-                学生证信息录入系统
+                学生证识别系统
               </h1>
               <p className="text-[11px] font-medium text-slate-500 tracking-wide uppercase hidden sm:block">
-                Student ID Management System
+                Student ID Recognition System
               </p>
             </div>
           </div>
@@ -272,7 +272,7 @@ export default function Home() {
             系统运行正常
           </div>
           <p className="text-xs text-slate-400 font-medium">
-            © {new Date().getFullYear()} Student ID Management System. Powered by AI.
+            © {new Date().getFullYear()} Student ID Recognition System. Powered by AI.
           </p>
         </div>
       </footer>

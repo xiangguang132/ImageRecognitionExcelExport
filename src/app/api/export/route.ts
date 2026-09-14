@@ -15,7 +15,7 @@ export async function GET() {
 
     // 创建 Excel 工作簿
     const workbook = new ExcelJS.Workbook()
-    workbook.creator = '学生证信息录入系统'
+    workbook.creator = '学生证识别系统'
     workbook.created = new Date()
 
     // 创建工作表

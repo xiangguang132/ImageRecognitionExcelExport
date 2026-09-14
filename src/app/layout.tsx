@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "学生证信息录入系统",
+  title: "学生证识别系统",
   description: "上传学生证图片/语音，AI识别信息，导出Excel",
 };
 
