@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Modal from '@/components/ui/Modal'
+import { useConfirm } from '@/components/ui/useConfirm'
 import { toast } from '@/components/ui/Toast'
 
 export interface Student {
@@ -43,9 +44,33 @@ export default function StudentTable({
 }: StudentTableProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
-  const [showExportModal, setShowExportModal] = useState(false)
+
+  const deleteConfirm = useConfirm({
+    title: '确认删除记录',
+    confirmText: '确认删除',
+    children: (
+      <div className="flex flex-col items-center text-center py-2">
+        <div className="w-32 h-28 mb-1">
+          <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Confirm Illustration" className="w-full h-full object-contain drop-shadow-md" />
+        </div>
+        <p className="text-slate-700 font-bold text-sm">确定要删除这条记录吗？</p>
+        <p className="text-xs text-slate-500 mt-1">记录将从列表中隐藏，数据保留在数据库中，导出时不会包含此记录。</p>
+      </div>
+    )
+  })
+  const exportConfirm = useConfirm({
+    title: '确认导出',
+    confirmText: '确认导出',
+    children: (
+      <div className="flex flex-col items-center text-center py-2">
+        <div className="w-28 h-24 mb-1">
+          <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Export Illustration" className="w-full h-full object-contain drop-shadow-md" />
+        </div>
+        <p className="text-slate-700 font-bold text-sm">确定要导出当前数据为 Excel 文件吗？</p>
+        <p className="text-xs text-slate-500 mt-1">将导出所有未删除的学生记录。</p>
+      </div>
+    )
+  })
 
   // 编辑状态
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
@@ -69,12 +94,10 @@ export default function StudentTable({
     prevLoadingRef.current = isLoading
   }, [isLoading])
 
-  const handleExportClick = () => {
-    setShowExportModal(true)
-  }
+  const handleExportClick = async () => {
+    const ok = await exportConfirm.confirm()
+    if (!ok) return
 
-  const handleExport = async () => {
-    setShowExportModal(false)
     setIsExporting(true)
     try {
       const fetchFn = authFetch || fetch
@@ -101,18 +124,13 @@ export default function StudentTable({
   }
 
   const handleDelete = async (id: number) => {
-    setPendingDeleteId(id)
-    setShowDeleteModal(true)
-  }
+    const ok = await deleteConfirm.confirm()
+    if (!ok) return
 
-  const confirmDelete = async () => {
-    if (pendingDeleteId === null) return
-
-    setShowDeleteModal(false)
-    setDeletingId(pendingDeleteId)
+    setDeletingId(id)
     try {
       const fetchFn = authFetch || fetch
-      const response = await fetchFn(`/api/students/${pendingDeleteId}`, {
+      const response = await fetchFn(`/api/students/${id}`, {
         method: 'DELETE'
       })
 
@@ -121,12 +139,11 @@ export default function StudentTable({
       }
 
       toast.success('删除成功')
-      onDelete(pendingDeleteId)
+      onDelete(id)
     } catch (error) {
       toast.error('删除失败，请重试')
     } finally {
       setDeletingId(null)
-      setPendingDeleteId(null)
     }
   }
 
@@ -400,47 +417,8 @@ export default function StudentTable({
         </div>
       )}
 
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={confirmDelete}
-        title="确认删除记录"
-        confirmText="确认删除"
-        cancelText="取消"
-      >
-        <div className="flex flex-col items-center text-center py-2">
-          <div className="w-32 h-28 mb-1">
-            <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Confirm Illustration" className="w-full h-full object-contain drop-shadow-md" />
-          </div>
-          <p className="text-slate-700 font-bold text-sm">
-            确定要删除这条记录吗？
-          </p>
-          <p className="text-xs text-slate-500 mt-1">
-            记录将从列表中隐藏，数据保留在数据库中，导出时不会包含此记录。
-          </p>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        onConfirm={handleExport}
-        title="确认导出"
-        confirmText="确认导出"
-        cancelText="取消"
-      >
-        <div className="flex flex-col items-center text-center py-2">
-          <div className="w-28 h-24 mb-1">
-            <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Export Illustration" className="w-full h-full object-contain drop-shadow-md" />
-          </div>
-          <p className="text-slate-700 font-bold text-sm">
-            确定要导出当前数据为 Excel 文件吗？
-          </p>
-          <p className="text-xs text-slate-500 mt-1">
-            将导出所有未删除的学生记录。
-          </p>
-        </div>
-      </Modal>
+      <deleteConfirm.Dialog />
+      <exportConfirm.Dialog />
 
       {/* 编辑弹窗 */}
       <Modal

@@ -56,3 +56,40 @@ export const PUT = withAdminParams(async (request, context) => {
     return NextResponse.json({ error: '更新用户失败' }, { status: 500 })
   }
 })
+
+// DELETE - 删除用户（软删除，仅管理员）
+export const DELETE = withAdminParams(async (request, context, user) => {
+  try {
+    const { id } = await context.params
+    const userId = parseInt(id)
+
+    if (isNaN(userId)) {
+      return NextResponse.json({ error: '无效的用户 ID' }, { status: 400 })
+    }
+
+    // 不能删除自己
+    if (userId === user.id) {
+      return NextResponse.json({ error: '不能删除自己的账号' }, { status: 400 })
+    }
+
+    // 检查用户是否存在（且未被删除）
+    const target = await prisma.user.findFirst({
+      where: { id: userId, isDel: 0 }
+    })
+
+    if (!target) {
+      return NextResponse.json({ error: '用户不存在' }, { status: 404 })
+    }
+
+    // 软删除
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isDel: 1 }
+    })
+
+    return NextResponse.json({ message: '删除成功' })
+  } catch (error) {
+    console.error('删除用户失败:', error)
+    return NextResponse.json({ error: '删除用户失败' }, { status: 500 })
+  }
+})

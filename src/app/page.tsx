@@ -7,10 +7,10 @@ import ImageUploader from '@/components/ImageUploader'
 import StudentInfoForm from '@/components/StudentInfoForm'
 import VoiceRecorder from '@/components/VoiceRecorder'
 import StudentTable, { Student } from '@/components/StudentTable'
-import Modal from '@/components/ui/Modal'
+import { useConfirm } from '@/components/ui/useConfirm'
 import { recognizeWithAI, StudentInfo } from '@/lib/recognize'
 import { recognizeVoiceWithAI } from '@/lib/voice'
-import Toast, { toast } from '@/components/ui/Toast'
+import { toast } from '@/components/ui/Toast'
 
 export default function Home() {
   const { user, isLoading: authLoading, logout, authFetch } = useAuth()
@@ -26,7 +26,7 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const logoutConfirm = useConfirm({ title: '确认退出登录', message: '确定要退出当前账号吗？', confirmText: '确认退出' })
   const pageSize = 10
 
   const isAdmin = user?.role === 'admin'
@@ -284,7 +284,13 @@ export default function Home() {
                 </p>
               </div>
               <button
-                onClick={() => setShowLogoutModal(true)}
+                onClick={async () => {
+                  const ok = await logoutConfirm.confirm()
+                  if (ok) {
+                    toast.success('已退出登录')
+                    logout()
+                  }
+                }}
                 className="ml-1 p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                 title="退出登录"
               >
@@ -406,27 +412,8 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* 退出登录确认弹窗 */}
-      <Modal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={() => {
-          setShowLogoutModal(false)
-          toast.success('已退出登录')
-          logout()
-        }}
-        title="确认退出登录"
-        confirmText="确认退出"
-        cancelText="取消"
-      >
-        <div className="flex flex-col items-center text-center py-2">
-          <p className="text-slate-700 font-bold text-sm">
-            确定要退出当前账号吗？
-          </p>
-        </div>
-      </Modal>
+      <logoutConfirm.Dialog />
 
-      <Toast />
     </div>
   )
 }

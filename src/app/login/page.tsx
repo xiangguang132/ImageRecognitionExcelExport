@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import Toast, { toast } from '@/components/ui/Toast'
+import { toast } from '@/components/ui/Toast'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
