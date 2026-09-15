@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateStudentInput } from '@/lib/validation'
+import { withAdminParams } from '@/lib/auth-middleware'
 
-// PUT - 更新学生信息
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// PUT - 更新学生信息（仅管理员）
+export const PUT = withAdminParams(async (request, context) => {
   try {
-    const { id } = await params
+    const { id } = await context.params
     const studentId = parseInt(id)
 
     if (isNaN(studentId)) {
@@ -57,15 +55,12 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+})
 
-// DELETE - 删除学生信息
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE - 删除学生信息（仅管理员）
+export const DELETE = withAdminParams(async (request, context) => {
   try {
-    const { id } = await params
+    const { id } = await context.params
     const studentId = parseInt(id)
 
     if (isNaN(studentId)) {
@@ -88,4 +83,4 @@ export async function DELETE(
       { status: 500 }
     )
   }
-}
+})

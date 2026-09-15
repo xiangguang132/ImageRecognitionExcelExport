@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth-middleware'
 
-export async function POST(request: NextRequest) {
+// POST - 图片识别（已登录用户均可）
+export const POST = withAuth(async (request) => {
   try {
     const formData = await request.formData()
     const file = formData.get('image') as File
@@ -119,4 +121,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

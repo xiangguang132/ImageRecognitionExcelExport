@@ -43,7 +43,7 @@ export default function Modal({
   }
 
   const handleConfirm = () => {
-    onConfirm()
+    onConfirm?.()
   }
 
   // 处理原生 dialog 的 cancel 事件 (按 ESC 触发)

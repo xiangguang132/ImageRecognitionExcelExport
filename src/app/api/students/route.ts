@@ -1,29 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateStudentInput } from '@/lib/validation'
+import { withAdmin, withAuth } from '@/lib/auth-middleware'
 
-// GET - 获取学生信息（支持分页）
-export async function GET(request: NextRequest) {
+// GET - 获取学生信息（支持分页）- 仅管理员
+export const GET = withAdmin(async () => {
   try {
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1', 10)
-    const pageSize = parseInt(searchParams.get('pageSize') || '10', 10)
+    const students = await prisma.student.findMany({
+      where: { isDel: 0 },
+      orderBy: { createdAt: 'desc' }
+    })
 
-    const skip = (page - 1) * pageSize
-
-    const [students, totalCount] = await prisma.$transaction([
-      prisma.student.findMany({
-        where: { isDel: 0 },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        skip,
-        take: pageSize
-      }),
-      prisma.student.count({ where: { isDel: 0 } })
-    ])
-
-    return NextResponse.json({ data: students, totalCount })
+    return NextResponse.json({ data: students, totalCount: students.length })
   } catch (error) {
     console.error('获取学生信息失败:', error)
     return NextResponse.json(
@@ -31,10 +19,10 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
 
-// POST - 新增学生信息
-export async function POST(request: NextRequest) {
+// POST - 新增学生信息 - 已登录用户均可
+export const POST = withAuth(async (request) => {
   try {
     const body = await request.json()
 
@@ -67,4 +55,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

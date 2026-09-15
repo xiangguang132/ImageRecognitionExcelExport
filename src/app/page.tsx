@@ -1,15 +1,21 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import ImageUploader from '@/components/ImageUploader'
 import StudentInfoForm from '@/components/StudentInfoForm'
 import VoiceRecorder from '@/components/VoiceRecorder'
 import StudentTable, { Student } from '@/components/StudentTable'
+import Modal from '@/components/ui/Modal'
 import { recognizeWithAI, StudentInfo } from '@/lib/recognize'
 import { recognizeVoiceWithAI } from '@/lib/voice'
 import Toast, { toast } from '@/components/ui/Toast'
 
 export default function Home() {
+  const { user, isLoading: authLoading, logout, authFetch } = useAuth()
+  const router = useRouter()
+
   const [students, setStudents] = useState<Student[]>([])
   const [recognizeData, setRecognizeData] = useState<StudentInfo | null>(null)
   const [isRecognizing, setIsRecognizing] = useState(false)
@@ -20,26 +26,42 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const pageSize = 10
 
-  // 获取学生列表
+  const isAdmin = user?.role === 'admin'
+
+  // 未登录跳转登录页
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/login')
+    }
+  }, [authLoading, user, router])
+
+  // 获取学生列表（仅管理员）
   const fetchStudents = useCallback(async (page: number = currentPage) => {
+    if (!isAdmin) return
     try {
-      const response = await fetch(`/api/students?page=${page}&pageSize=${pageSize}`)
+      const response = await authFetch(`/api/students?page=${page}&pageSize=${pageSize}`)
       if (response.ok) {
         const result = await response.json()
         setStudents(result.data)
         setTotalCount(result.totalCount)
+      } else if (response.status === 401) {
+        logout()
+        router.replace('/login')
       }
     } catch (error) {
       console.error('获取学生列表失败:', error)
     }
-  }, [currentPage, pageSize])
+  }, [isAdmin, authFetch, currentPage, pageSize, logout, router])
 
-  // 页面加载时获取数据
+  // 页面加载时获取数据（仅管理员）
   useEffect(() => {
-    fetchStudents(1)
-  }, [fetchStudents])
+    if (isAdmin) {
+      fetchStudents(1)
+    }
+  }, [isAdmin, fetchStudents])
 
   // 图片上传并识别
   const handleImageUpload = async (file: File) => {
@@ -47,7 +69,36 @@ export default function Home() {
     setRecognizeData(null)
 
     try {
-      const info = await recognizeWithAI(file)
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await authFetch('/api/recognize', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || '识别失败')
+      }
+
+      const data = await response.json()
+
+      // 处理学号和邮箱
+      const { cleanStudentId, generateEmail, mapRole } = await import('@/lib/recognize')
+      const cleanId = data.studentId ? cleanStudentId(data.studentId) : ''
+      const email = cleanId ? generateEmail(cleanId) : ''
+
+      const info: StudentInfo = {
+        studentId: cleanId,
+        name: data.name || '',
+        email: email,
+        major: '',
+        role: data.role ? mapRole(data.role) : '',
+        interestDirection: '',
+        interestTopic: ''
+      }
+
       toast.success('AI 识别完成，请核对以下信息')
       setRecognizeData(info)
     } catch (error: any) {
@@ -63,7 +114,35 @@ export default function Home() {
     setIsVoiceRecognizing(true)
 
     try {
-      const info = await recognizeVoiceWithAI(audioBlob)
+      const formData = new FormData()
+      formData.append('audio', audioBlob, 'recording.webm')
+
+      const response = await authFetch('/api/voice-recognize', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || '语音识别失败')
+      }
+
+      const data = await response.json()
+
+      const { cleanStudentId, generateEmail, mapRole } = await import('@/lib/recognize')
+      const cleanId = data.studentId ? cleanStudentId(data.studentId) : ''
+      const email = cleanId ? generateEmail(cleanId) : ''
+
+      const info: StudentInfo = {
+        studentId: cleanId,
+        name: data.name || '',
+        email: email,
+        major: data.major || '',
+        role: data.role ? mapRole(data.role) : '',
+        interestDirection: data.interestDirection || '',
+        interestTopic: data.interestTopic || ''
+      }
+
       toast.success('语音识别完成，请核对以下信息')
       setRecognizeData(info)
     } catch (error: any) {
@@ -79,30 +158,29 @@ export default function Home() {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/students', {
+      const response = await authFetch('/api/students', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
 
       if (!response.ok) {
-        // 透出服务端校验错误（格式 / 敏感内容），而不是笼统的"提交失败"
         let serverError = '提交失败，请重试'
         try {
           const err = await response.json()
           if (err?.error) serverError = err.error
-        } catch { /* 忽略解析失败，使用默认提示 */ }
+        } catch { /* 忽略解析失败 */ }
         throw new Error(serverError)
       }
 
       toast.success('提交信息成功')
       setRecognizeData(null)
 
-      // 提交成功后回到第一页并刷新
-      setCurrentPage(1)
-      await fetchStudents(1)
+      // 提交成功后回到第一页并刷新（仅管理员）
+      if (isAdmin) {
+        setCurrentPage(1)
+        await fetchStudents(1)
+      }
 
       // 重置表单和图片
       setClearImage(true)
@@ -119,11 +197,10 @@ export default function Home() {
   const handleFormReset = () => {
     setClearImage(true)
     setRecognizeData(null)
-    // 重置 trigger，以便下次还能触发
     setTimeout(() => setClearImage(false), 100)
   }
+
   const handleDelete = (id: number) => {
-    // 删除后如果当前页没数据了，回到上一页
     if (students.length === 1 && currentPage > 1) {
       setCurrentPage(prev => prev - 1)
       fetchStudents(currentPage - 1)
@@ -136,6 +213,23 @@ export default function Home() {
     setStudents(prev =>
       prev.map(s => (s.id === id ? { ...s, ...updated } : s))
     )
+  }
+
+  // 加载中
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <span className="text-sm font-medium text-slate-500">加载中...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // 未登录（会被 useEffect 重定向，但作为安全兜底）
+  if (!user) {
+    return null
   }
 
   return (
@@ -165,8 +259,40 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="text-xs text-slate-400 font-mono">
-            v1.0.0
+          <div className="flex items-center gap-3">
+            {/* 管理员入口 */}
+            {isAdmin && (
+              <button
+                onClick={() => router.push('/admin/users')}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 transition-all"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <span className="hidden sm:inline">用户管理</span>
+              </button>
+            )}
+            {/* 用户信息 + 退出 */}
+            <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                {(user.name || user.email)[0].toUpperCase()}
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-xs font-bold text-slate-700 leading-tight">{user.name}</p>
+                <p className="text-[10px] text-slate-400 font-medium leading-tight">
+                  {isAdmin ? '管理员' : '普通用户'}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                className="ml-1 p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                title="退出登录"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -224,44 +350,47 @@ export default function Home() {
           />
         </div>
 
-        {/* 数据表格 */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-5 sm:p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                  查看与管理
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">核对学生信息并导出数据</p>
+        {/* 数据表格 - 仅管理员可见 */}
+        {isAdmin && (
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-5 sm:p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                    查看与管理
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">核对学生信息并导出数据</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <StudentTable
-            students={students}
-            onDelete={handleDelete}
-            onEdit={handleEdit}
-            isLoading={isRefreshing}
-            onRefresh={async () => {
-              setIsRefreshing(true)
-              await fetchStudents(currentPage)
-              setIsRefreshing(false)
-              toast.success('刷新数据成功')
-            }}
-            currentPage={currentPage}
-            totalCount={totalCount}
-            pageSize={pageSize}
-            onPageChange={(page) => {
-              setCurrentPage(page)
-              fetchStudents(page)
-            }}
-          />
-        </div>
+            <StudentTable
+              students={students}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+              isLoading={isRefreshing}
+              onRefresh={async () => {
+                setIsRefreshing(true)
+                await fetchStudents(currentPage)
+                setIsRefreshing(false)
+                toast.success('刷新数据成功')
+              }}
+              currentPage={currentPage}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={(page) => {
+                setCurrentPage(page)
+                fetchStudents(page)
+              }}
+              authFetch={authFetch}
+            />
+          </div>
+        )}
       </main>
 
       {/* 底部 */}
@@ -276,6 +405,27 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      {/* 退出登录确认弹窗 */}
+      <Modal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={() => {
+          setShowLogoutModal(false)
+          toast.success('已退出登录')
+          logout()
+        }}
+        title="确认退出登录"
+        confirmText="确认退出"
+        cancelText="取消"
+      >
+        <div className="flex flex-col items-center text-center py-2">
+          <p className="text-slate-700 font-bold text-sm">
+            确定要退出当前账号吗？
+          </p>
+        </div>
+      </Modal>
+
       <Toast />
     </div>
   )

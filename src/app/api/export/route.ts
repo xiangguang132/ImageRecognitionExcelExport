@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withAdmin } from '@/lib/auth-middleware'
 import ExcelJS from 'exceljs'
 
-// GET - 导出 Excel（匹配"学生账号导入模板"格式）
-export async function GET() {
+// GET - 导出 Excel（仅管理员）
+export const GET = withAdmin(async () => {
   try {
     // 获取所有学生数据
     const students = await prisma.student.findMany({
@@ -72,4 +73,4 @@ export async function GET() {
       { status: 500 }
     )
   }
-}
+})

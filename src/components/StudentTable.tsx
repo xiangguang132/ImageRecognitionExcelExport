@@ -26,6 +26,7 @@ interface StudentTableProps {
   totalCount: number
   pageSize: number
   onPageChange: (page: number) => void
+  authFetch?: (url: string, options?: RequestInit) => Promise<Response>
 }
 
 export default function StudentTable({
@@ -37,7 +38,8 @@ export default function StudentTable({
   currentPage,
   totalCount,
   pageSize,
-  onPageChange
+  onPageChange,
+  authFetch
 }: StudentTableProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
@@ -75,7 +77,8 @@ export default function StudentTable({
     setShowExportModal(false)
     setIsExporting(true)
     try {
-      const response = await fetch('/api/export')
+      const fetchFn = authFetch || fetch
+      const response = await fetchFn('/api/export')
       if (!response.ok) {
         throw new Error('导出失败')
       }
@@ -108,7 +111,8 @@ export default function StudentTable({
     setShowDeleteModal(false)
     setDeletingId(pendingDeleteId)
     try {
-      const response = await fetch(`/api/students/${pendingDeleteId}`, {
+      const fetchFn = authFetch || fetch
+      const response = await fetchFn(`/api/students/${pendingDeleteId}`, {
         method: 'DELETE'
       })
 
@@ -166,7 +170,8 @@ export default function StudentTable({
 
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/students/${editingStudent.id}`, {
+      const fetchFn = authFetch || fetch
+      const response = await fetchFn(`/api/students/${editingStudent.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
