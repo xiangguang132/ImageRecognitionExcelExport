@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useConfirm } from '@/components/ui/useConfirm'
 import Modal from '@/components/ui/Modal'
+import Pagination from '@/components/ui/Pagination'
 import { toast } from '@/components/ui/Toast'
 
 interface UserItem {
@@ -22,8 +23,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserItem[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 10
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const [pageSize, setPageSize] = useState(10)
   const [isLoading, setIsLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
@@ -49,9 +49,9 @@ export default function AdminUsersPage() {
     if (!authLoading && user && user.role !== 'admin') router.replace('/')
   }, [authLoading, user, router])
 
-  const fetchUsers = useCallback(async (page: number = currentPage) => {
+  const fetchUsers = useCallback(async (page: number = currentPage, size: number = pageSize) => {
     try {
-      const response = await authFetch(`/api/admin/users?page=${page}&pageSize=${pageSize}`)
+      const response = await authFetch(`/api/admin/users?page=${page}&pageSize=${size}`)
       if (response.ok) {
         const result = await response.json()
         setUsers(result.data)
@@ -335,38 +335,19 @@ export default function AdminUsersPage() {
             </>
           )}
           {/* 分页控制 */}
-          {totalCount > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-5 py-4 border-t border-slate-100">
-              <div className="text-xs font-medium text-slate-500 mb-3 sm:mb-0 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-                共 <span className="font-bold text-slate-700">{totalCount}</span> 位用户
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => fetchUsers(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow flex items-center gap-1"
-                >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  上一页
-                </button>
-                <div className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
-                  {currentPage} / {totalPages}
-                </div>
-                <button
-                  onClick={() => fetchUsers(currentPage + 1)}
-                  disabled={currentPage >= totalPages}
-                  className="px-3 py-1.5 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center gap-1"
-                >
-                  下一页
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="px-4 sm:px-5 pb-4">
+            <Pagination
+              currentPage={currentPage}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              itemLabel="位用户"
+              onPageChange={(page) => fetchUsers(page)}
+              onPageSizeChange={(size) => {
+                setPageSize(size)
+                fetchUsers(1, size)
+              }}
+            />
+          </div>
         </div>
       </main>
 

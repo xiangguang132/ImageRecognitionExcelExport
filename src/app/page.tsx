@@ -8,7 +8,6 @@ import StudentInfoForm from '@/components/StudentInfoForm'
 import VoiceRecorder from '@/components/VoiceRecorder'
 import StudentTable, { Student } from '@/components/StudentTable'
 import { useConfirm } from '@/components/ui/useConfirm'
-import Logo from '@/components/Logo'
 import { recognizeWithAI, StudentInfo } from '@/lib/recognize'
 import { recognizeVoiceWithAI } from '@/lib/voice'
 import { toast } from '@/components/ui/Toast'
@@ -26,9 +25,9 @@ export default function Home() {
   const [isVoiceRecognizing, setIsVoiceRecognizing] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const logoutConfirm = useConfirm({ title: '确认退出登录', message: '确定要退出当前账号吗？', confirmText: '确认退出' })
-  const pageSize = 10
 
   const isAdmin = user?.role === 'admin'
 
@@ -40,10 +39,10 @@ export default function Home() {
   }, [authLoading, user, router])
 
   // 获取学生列表（仅管理员）
-  const fetchStudents = useCallback(async (page: number = currentPage) => {
+  const fetchStudents = useCallback(async (page: number = currentPage, size: number = pageSize) => {
     if (!isAdmin) return
     try {
-      const response = await authFetch(`/api/students?page=${page}&pageSize=${pageSize}`)
+      const response = await authFetch(`/api/students?page=${page}&pageSize=${size}`)
       if (response.ok) {
         const result = await response.json()
         setStudents(result.data)
@@ -246,7 +245,11 @@ export default function Home() {
       <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/70 border-b border-slate-200/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Logo size="sm" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-slate-900">
                 学生证识别系统
@@ -389,6 +392,11 @@ export default function Home() {
               onPageChange={(page) => {
                 setCurrentPage(page)
                 fetchStudents(page)
+              }}
+              onPageSizeChange={(size) => {
+                setPageSize(size)
+                setCurrentPage(1)
+                fetchStudents(1, size)
               }}
               authFetch={authFetch}
             />

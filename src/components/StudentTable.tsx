@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Modal from '@/components/ui/Modal'
+import Pagination from '@/components/ui/Pagination'
 import { useConfirm } from '@/components/ui/useConfirm'
 import { toast } from '@/components/ui/Toast'
 
@@ -27,6 +28,7 @@ interface StudentTableProps {
   totalCount: number
   pageSize: number
   onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: number) => void
   authFetch?: (url: string, options?: RequestInit) => Promise<Response>
 }
 
@@ -40,6 +42,7 @@ export default function StudentTable({
   totalCount,
   pageSize,
   onPageChange,
+  onPageSizeChange,
   authFetch
 }: StudentTableProps) {
   const [isExporting, setIsExporting] = useState(false)
@@ -82,8 +85,6 @@ export default function StudentTable({
 
   // 行动画 key，刷新后递增触发重新挂载
   const [rowAnimKey, setRowAnimKey] = useState(0)
-
-  const totalPages = Math.ceil(totalCount / pageSize)
 
   // 刷新完成时触发行动画
   const prevLoadingRef = useRef(isLoading)
@@ -382,40 +383,13 @@ export default function StudentTable({
       </div>
 
       {/* 分页控制 */}
-      {totalCount > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-slate-100">
-          <div className="text-xs font-medium text-slate-500 mb-3 sm:mb-0 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-            共 <span className="font-bold text-slate-700">{totalCount}</span> 条记录
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow flex items-center gap-1"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              上一页
-            </button>
-
-            <div className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
-              {currentPage} / {totalPages}
-            </div>
-
-            <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-              className="px-3 py-1.5 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center gap-1"
-            >
-              下一页
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalCount={totalCount}
+        pageSize={pageSize}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
 
       <deleteConfirm.Dialog />
       <exportConfirm.Dialog />
