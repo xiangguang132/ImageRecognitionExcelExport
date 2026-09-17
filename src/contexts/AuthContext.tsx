@@ -33,35 +33,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // 初始化：从 localStorage 恢复 token 并验证
+  // 初始化：靠 httpOnly Cookie 恢复会话（不再读 localStorage，防 XSS 盗用）
   useEffect(() => {
-    const stored = localStorage.getItem('auth_token')
-    if (stored) {
-      setToken(stored)
-      // 验证 token
-      fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${stored}` }
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            const data = await res.json()
-            setUser(data.user)
-          } else {
-            // token 无效，清除
-            localStorage.removeItem('auth_token')
-            setToken(null)
-            setUser(null)
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem('auth_token')
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data.user)
+        } else {
           setToken(null)
           setUser(null)
-        })
-        .finally(() => setIsLoading(false))
-    } else {
-      setIsLoading(false)
-    }
+        }
+      })
+      .catch(() => {
+        setToken(null)
+        setUser(null)
+      })
+      .finally(() => setIsLoading(false))
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
@@ -69,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       })
 
@@ -78,8 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: data.error || '登录失败' }
       }
 
-      localStorage.setItem('auth_token', data.token)
-      setToken(data.token)
+      // Token 已由服务端写入 httpOnly Cookie；内存中保留一份用于 Authorization header 兜底，
+      // 不再写入 localStorage。刷新页面后靠 Cookie 会话恢复。
+      setToken(data.token ?? null)
       setUser(data.user)
       return {}
     } catch {
@@ -88,27 +78,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem('auth_token')
+    // 通知服务端清除 httpOnly Cookie（失败也继续清理本地状态）
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {})
     setToken(null)
     setUser(null)
   }, [])
 
-  // 带认证的 fetch 封装
+  // 带认证的 fetch 封装（Cookie 自动随 same-origin 请求发送，内存 token 做 header 兜底）
   const authFetch = useCallback(async (url: string, options: RequestInit = {}): Promise<Response> => {
     const headers = new Headers(options.headers)
     if (token) {
       headers.set('Authorization', `Bearer ${token}`)
     }
-    return fetch(url, { ...options, headers })
+    return fetch(url, { ...options, headers, credentials: 'include' })
   }, [token])
 
   // 刷新当前用户信息
   const refreshUser = useCallback(async () => {
-    if (!token) return
     try {
-      const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const headers = new Headers()
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`)
+      }
+      const res = await fetch('/api/auth/me', { headers, credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setUser(data.user)

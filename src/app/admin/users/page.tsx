@@ -21,6 +21,9 @@ export default function AdminUsersPage() {
 
   const [users, setUsers] = useState<UserItem[]>([])
   const [totalCount, setTotalCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
   const [isLoading, setIsLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
@@ -46,13 +49,14 @@ export default function AdminUsersPage() {
     if (!authLoading && user && user.role !== 'admin') router.replace('/')
   }, [authLoading, user, router])
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (page: number = currentPage) => {
     try {
-      const response = await authFetch('/api/admin/users')
+      const response = await authFetch(`/api/admin/users?page=${page}&pageSize=${pageSize}`)
       if (response.ok) {
         const result = await response.json()
         setUsers(result.data)
         setTotalCount(result.totalCount)
+        setCurrentPage(page)
       } else if (response.status === 401) {
         logout()
         router.replace('/login')
@@ -62,7 +66,7 @@ export default function AdminUsersPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [authFetch, logout, router])
+  }, [authFetch, logout, router, currentPage, pageSize])
 
   useEffect(() => {
     if (user?.role === 'admin') fetchUsers()
@@ -82,8 +86,8 @@ export default function AdminUsersPage() {
       toast.success('用户创建成功')
       setShowAddModal(false)
       setNewEmail(''); setNewName(''); setNewPassword(''); setShowNewPassword(false); setNewRole('user')
-      await fetchUsers()
-    } catch (error: any) { toast.error(error?.message || '创建用户失败') }
+      await fetchUsers(1)
+    } catch (error: unknown) { toast.error(error instanceof Error ? error.message : '创建用户失败') }
     finally { setIsSubmitting(false) }
   }
 
@@ -95,8 +99,13 @@ export default function AdminUsersPage() {
       const response = await authFetch(`/api/admin/users/${id}`, { method: 'DELETE' })
       if (!response.ok) { const err = await response.json(); throw new Error(err.error || '删除失败') }
       toast.success('删除成功')
-      await fetchUsers()
-    } catch (error: any) { toast.error(error?.message || '删除用户失败') }
+      // 删掉本页最后一条且不在第一页时，自动回退一页
+      if (users.length === 1 && currentPage > 1) {
+        await fetchUsers(currentPage - 1)
+      } else {
+        await fetchUsers(currentPage)
+      }
+    } catch (error: unknown) { toast.error(error instanceof Error ? error.message : '删除用户失败') }
     finally { setDeletingId(null) }
   }
 
@@ -112,7 +121,7 @@ export default function AdminUsersPage() {
     if (editForm.password && editForm.password.length < 6) { toast.error('密码长度至少 6 位'); return }
     setIsSaving(true)
     try {
-      const body: Record<string, any> = { email: editForm.email.trim(), name: editForm.name.trim(), role: editForm.role }
+      const body: Record<string, string> = { email: editForm.email.trim(), name: editForm.name.trim(), role: editForm.role }
       if (editForm.password) body.password = editForm.password
       const response = await authFetch(`/api/admin/users/${editingUser.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
@@ -120,8 +129,8 @@ export default function AdminUsersPage() {
       if (!response.ok) { const err = await response.json(); throw new Error(err.error || '更新失败') }
       toast.success('用户信息更新成功')
       setEditingUser(null)
-      await fetchUsers()
-    } catch (error: any) { toast.error(error?.message || '更新用户失败') }
+      await fetchUsers(currentPage)
+    } catch (error: unknown) { toast.error(error instanceof Error ? error.message : '更新用户失败') }
     finally { setIsSaving(false) }
   }
 
@@ -229,7 +238,7 @@ export default function AdminUsersPage() {
         {/* 操作栏 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="text-xl font-black text-slate-800 tracking-tighter">{users.length}</div>
+            <div className="text-xl font-black text-slate-800 tracking-tighter">{totalCount}</div>
             <div className="text-xs font-medium text-slate-500 border-l border-slate-200 pl-2">用户总数</div>
           </div>
           <button
@@ -324,6 +333,39 @@ export default function AdminUsersPage() {
                 ))}
               </div>
             </>
+          )}
+          {/* 分页控制 */}
+          {totalCount > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-5 py-4 border-t border-slate-100">
+              <div className="text-xs font-medium text-slate-500 mb-3 sm:mb-0 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+                共 <span className="font-bold text-slate-700">{totalCount}</span> 位用户
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => fetchUsers(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow flex items-center gap-1"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  上一页
+                </button>
+                <div className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
+                  {currentPage} / {totalPages}
+                </div>
+                <button
+                  onClick={() => fetchUsers(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="px-3 py-1.5 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center gap-1"
+                >
+                  下一页
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </main>

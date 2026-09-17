@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       role: user.role
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       token,
       user: {
         id: user.id,
@@ -52,6 +52,17 @@ export async function POST(request: NextRequest) {
         role: user.role
       }
     })
+
+    // Token 同时写入 httpOnly Cookie（防 XSS，前端不再依赖 localStorage）
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24,
+      secure: process.env.NODE_ENV === 'production'
+    })
+
+    return response
   } catch (error) {
     console.error('登录失败:', error)
     return NextResponse.json(

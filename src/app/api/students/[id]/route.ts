@@ -28,8 +28,19 @@ export const PUT = withAdminParams(async (request, context) => {
       )
     }
 
-    const updated = await prisma.student.update({
-      where: { id: studentId, isDel: 0 },
+    const updated = await prisma.student.findFirst({
+      where: { id: studentId, isDel: 0 }
+    })
+
+    if (!updated) {
+      return NextResponse.json(
+        { error: '记录不存在' },
+        { status: 404 }
+      )
+    }
+
+    const result = await prisma.student.update({
+      where: { id: studentId },
       data: {
         studentId: newStudentId ?? undefined,
         name: name ?? undefined,
@@ -41,10 +52,10 @@ export const PUT = withAdminParams(async (request, context) => {
       }
     })
 
-    return NextResponse.json(updated)
-  } catch (error: any) {
+    return NextResponse.json(result)
+  } catch (error: unknown) {
     console.error('更新学生信息失败:', error)
-    if (error.code === 'P2025') {
+    if ((error as { code?: string }).code === 'P2025') {
       return NextResponse.json(
         { error: '记录不存在' },
         { status: 404 }
@@ -67,6 +78,17 @@ export const DELETE = withAdminParams(async (request, context) => {
       return NextResponse.json(
         { error: '无效的 ID' },
         { status: 400 }
+      )
+    }
+
+    const existing = await prisma.student.findFirst({
+      where: { id: studentId, isDel: 0 }
+    })
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: '记录不存在' },
+        { status: 404 }
       )
     }
 

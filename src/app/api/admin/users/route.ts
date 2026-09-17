@@ -7,8 +7,12 @@ import { hashPassword } from '@/lib/auth'
 export const GET = withAdmin(async (request) => {
   try {
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1', 10)
-    const pageSize = parseInt(searchParams.get('pageSize') || '20', 10)
+    const rawPage = parseInt(searchParams.get('page') || '1', 10)
+    const rawPageSize = parseInt(searchParams.get('pageSize') || '20', 10)
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1
+    const pageSize = Number.isFinite(rawPageSize)
+      ? Math.min(Math.max(rawPageSize, 1), 100)
+      : 20
     const skip = (page - 1) * pageSize
 
     const [users, totalCount] = await prisma.$transaction([

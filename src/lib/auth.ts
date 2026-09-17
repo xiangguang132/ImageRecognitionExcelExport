@@ -8,8 +8,21 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-me'
 const JWT_EXPIRES_IN = '24h'
+
+export const AUTH_COOKIE_NAME = 'auth_token'
+
+/**
+ * 获取 JWT 密钥。未配置时直接抛错（fail fast），
+ * 避免用硬编码 fallback 签发可被伪造的 Token。
+ */
+function requireSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('缺少 JWT_SECRET 环境变量，拒绝签发/验证 Token')
+  }
+  return secret
+}
 
 export interface JwtPayload {
   id: number
@@ -47,7 +60,7 @@ export function generateToken(user: { id: number; email: string; role: string })
     email: user.email,
     role: user.role
   }
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
+  return jwt.sign(payload, requireSecret(), { expiresIn: JWT_EXPIRES_IN })
 }
 
 /**
@@ -55,23 +68,53 @@ export function generateToken(user: { id: number; email: string; role: string })
  */
 export function verifyToken(token: string): JwtPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload
+    return jwt.verify(token, requireSecret()) as JwtPayload
   } catch {
     return null
   }
 }
 
 /**
- * 从 Authorization header 中提取 Bearer token 并验证
+ * 从 Cookie 头中提取指定 Cookie 的值
+ */
+function getCookieValue(cookieHeader: string | null, name: string): string | null {
+  if (!cookieHeader) return null
+  const cookies = cookieHeader.split(';')
+  for (const cookie of cookies) {
+    const idx = cookie.indexOf('=')
+    if (idx === -1) continue
+    const key = cookie.slice(0, idx).trim()
+    if (key === name) {
+      return decodeURIComponent(cookie.slice(idx + 1).trim())
+    }
+  }
+  return null
+}
+
+/**
+ * 从请求中提取 Bearer token（优先 httpOnly Cookie，其次 Authorization header 兼容旧客户端）
+ */
+export function extractToken(request: Request): string | null {
+  const fromCookie = getCookieValue(request.headers.get('cookie'), AUTH_COOKIE_NAME)
+  if (fromCookie) return fromCookie
+
+  const authHeader = request.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.slice(7)
+  }
+  return null
+}
+
+/**
+ * 从请求（httpOnly Cookie 优先，Authorization header 兼容）中提取并验证 token
  * 返回完整的用户信息（从数据库查询）或 null
  */
 export async function getCurrentUser(request: Request): Promise<AuthUser | null> {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
+  const token = extractToken(request)
+  if (!token) {
     return null
   }
 
-  const token = authHeader.slice(7)
   const payload = verifyToken(token)
   if (!payload) {
     return null
