@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateStudentInput } from '@/lib/validation'
 import { withAdminParams } from '@/lib/auth-middleware'
@@ -39,10 +39,24 @@ export const PUT = withAdminParams(async (request, context) => {
       )
     }
 
+    // 学号改动时判重（与 POST 同一规则：未删除记录中学号已存在则拒绝）
+    const normalizedNewId = typeof newStudentId === 'string' ? newStudentId.trim() : ''
+    if (normalizedNewId && normalizedNewId !== updated.studentId) {
+      const conflict = await prisma.student.findFirst({
+        where: { studentId: normalizedNewId, isDel: 0 }
+      })
+      if (conflict) {
+        return NextResponse.json(
+          { error: '该学号已存在，请勿重复录入' },
+          { status: 409 }
+        )
+      }
+    }
+
     const result = await prisma.student.update({
       where: { id: studentId },
       data: {
-        studentId: newStudentId ?? undefined,
+        studentId: normalizedNewId || undefined,
         name: name ?? undefined,
         email: email ?? undefined,
         major: major ?? undefined,

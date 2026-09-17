@@ -72,7 +72,7 @@ export const POST = withAuth(async (request) => {
 
     const student = await prisma.student.create({
       data: {
-        studentId: body.studentId || null,
+        studentId, // 存去空格后的值，与判重字段一致
         name: body.name || null,
         email: body.email || null,
         major: body.major || null,
