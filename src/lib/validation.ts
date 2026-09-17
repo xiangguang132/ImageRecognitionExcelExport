@@ -164,7 +164,7 @@ export function validateStudentInput(input: StudentInput = {}): ValidationResult
   // 身份角色：配合前端下拉，只允许标准枚举值
   const role = toStr(input.role)
   if (role && role !== 'student' && role !== 'teacher') {
-    fieldErrors.role = '身份角色只能是 Student（学生）或 Teacher（教师）'
+    fieldErrors.role = '身份角色只能是 student（学生）或 teacher（教师）'
   }
 
   // 未来兴趣方向：项目 / 研究的逗号组合

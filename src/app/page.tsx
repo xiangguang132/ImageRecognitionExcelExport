@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import ImageUploader from '@/components/ImageUploader'
 import StudentInfoForm from '@/components/StudentInfoForm'
-import VoiceRecorder from '@/components/VoiceRecorder'
+import VoiceRecorder, { useVoiceRecordingSupport } from '@/components/VoiceRecorder'
 import StudentTable, { Student } from '@/components/StudentTable'
 import { useConfirm } from '@/components/ui/useConfirm'
 import { recognizeWithAI, StudentInfo } from '@/lib/recognize'
@@ -28,6 +28,7 @@ export default function Home() {
   const [pageSize, setPageSize] = useState(10)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const logoutConfirm = useConfirm({ title: '确认退出登录', message: '确定要退出当前账号吗？', confirmText: '确认退出' })
+  const voiceSupported = useVoiceRecordingSupport()
 
   const isAdmin = user?.role === 'admin'
 
@@ -56,98 +57,57 @@ export default function Home() {
     }
   }, [isAdmin, authFetch, currentPage, pageSize, logout, router])
 
-  // 页面加载时获取数据（仅管理员）
+  // 页面加载时获取数据（仅管理员；setState 只在 promise 回调中执行）
   useEffect(() => {
-    if (isAdmin) {
-      fetchStudents(1)
-    }
-  }, [isAdmin, fetchStudents])
+    if (!isAdmin) return
+    let cancelled = false
+    authFetch(`/api/students?page=1&pageSize=${pageSize}`)
+      .then(async (response) => {
+        if (cancelled) return
+        if (response.ok) {
+          const result = await response.json()
+          if (cancelled) return
+          setStudents(result.data)
+          setTotalCount(result.totalCount)
+        } else if (response.status === 401) {
+          logout()
+          router.replace('/login')
+        }
+      })
+      .catch((error) => console.error('获取学生列表失败:', error))
+    return () => { cancelled = true }
+  }, [isAdmin, authFetch, pageSize, logout, router])
 
-  // 图片上传并识别
+  // 图片上传并识别（统一走 lib，携带登录态）
   const handleImageUpload = async (file: File) => {
     setIsRecognizing(true)
     setRecognizeData(null)
 
     try {
-      const formData = new FormData()
-      formData.append('image', file)
-
-      const response = await authFetch('/api/recognize', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || '识别失败')
-      }
-
-      const data = await response.json()
-
-      // 处理学号和邮箱
-      const { cleanStudentId, generateEmail, mapRole } = await import('@/lib/recognize')
-      const cleanId = data.studentId ? cleanStudentId(data.studentId) : ''
-      const email = cleanId ? generateEmail(cleanId) : ''
-
-      const info: StudentInfo = {
-        studentId: cleanId,
-        name: data.name || '',
-        email: email,
-        major: '',
-        role: data.role ? mapRole(data.role) : '',
-        interestDirection: '',
-        interestTopic: ''
-      }
-
+      const info = await recognizeWithAI(file, authFetch)
       toast.success('AI 识别完成，请核对以下信息')
       setRecognizeData(info)
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '请重试'
       console.error('[页面] ❌ 识别失败:', error)
-      toast.error(`识别失败: ${error.message || '请重试'}`)
+      toast.error(`识别失败: ${message}`)
     } finally {
       setIsRecognizing(false)
     }
   }
 
-  // 语音录制完成并识别
+  // 语音录制完成并识别（统一走 lib，携带登录态）
   const handleVoiceRecordingComplete = async (audioBlob: Blob) => {
     setIsVoiceRecognizing(true)
 
     try {
-      const formData = new FormData()
-      formData.append('audio', audioBlob, 'recording.webm')
-
-      const response = await authFetch('/api/voice-recognize', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || '语音识别失败')
-      }
-
-      const data = await response.json()
-
-      const { cleanStudentId, generateEmail, mapRole } = await import('@/lib/recognize')
-      const cleanId = data.studentId ? cleanStudentId(data.studentId) : ''
-      const email = cleanId ? generateEmail(cleanId) : ''
-
-      const info: StudentInfo = {
-        studentId: cleanId,
-        name: data.name || '',
-        email: email,
-        major: data.major || '',
-        role: data.role ? mapRole(data.role) : '',
-        interestDirection: data.interestDirection || '',
-        interestTopic: data.interestTopic || ''
-      }
-
+      const info = await recognizeVoiceWithAI(audioBlob, authFetch)
       toast.success('语音识别完成，请核对以下信息')
       setRecognizeData(info)
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '请重试'
       console.error('[页面] 语音识别失败:', error)
-      toast.error(`语音识别失败: ${error.message || '请重试'}`)
+      toast.error(`语音识别失败: ${message}`)
     } finally {
       setIsVoiceRecognizing(false)
     }
@@ -185,9 +145,9 @@ export default function Home() {
       // 重置表单和图片
       setClearImage(true)
       setTimeout(() => setClearImage(false), 100)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('提交失败:', error)
-      toast.error(error?.message || '提交失败，请重试')
+      toast.error(error instanceof Error ? error.message : '提交失败，请重试')
     } finally {
       setIsSubmitting(false)
     }
@@ -323,7 +283,8 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setShowVoiceRecorder(true)}
-              disabled={isRecognizing || isVoiceRecognizing}
+              disabled={isRecognizing || isVoiceRecognizing || !voiceSupported}
+              title={voiceSupported ? '语音录入' : '当前浏览器不支持语音录入'}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm font-bold shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-pink-600 hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

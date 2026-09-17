@@ -209,8 +209,8 @@ export default function StudentTable({
       onEdit(editingStudent.id, updated)
       setEditingStudent(null)
       toast.success('编辑成功')
-    } catch (error: any) {
-      toast.error(error?.message || '更新学生信息失败，请重试')
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : '更新学生信息失败，请重试')
     } finally {
       setIsSaving(false)
     }

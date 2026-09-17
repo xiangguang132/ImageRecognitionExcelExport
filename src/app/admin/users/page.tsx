@@ -69,8 +69,26 @@ export default function AdminUsersPage() {
   }, [authFetch, logout, router, currentPage, pageSize])
 
   useEffect(() => {
-    if (user?.role === 'admin') fetchUsers()
-  }, [user, fetchUsers])
+    if (user?.role !== 'admin') return
+    let cancelled = false
+    authFetch(`/api/admin/users?page=1&pageSize=${pageSize}`)
+      .then(async (response) => {
+        if (cancelled) return
+        if (response.ok) {
+          const result = await response.json()
+          if (cancelled) return
+          setUsers(result.data)
+          setTotalCount(result.totalCount)
+          setCurrentPage(1)
+        } else if (response.status === 401) {
+          logout()
+          router.replace('/login')
+        }
+      })
+      .catch((error) => console.error('获取用户列表失败:', error))
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+    return () => { cancelled = true }
+  }, [user, authFetch, pageSize, logout, router])
 
   const handleAddUser = async () => {
     if (!newEmail.trim() || !newName.trim() || !newPassword) { toast.error('请填写完整信息'); return }

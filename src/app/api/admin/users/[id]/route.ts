@@ -4,7 +4,7 @@ import { withAdminParams } from '@/lib/auth-middleware'
 import { hashPassword } from '@/lib/auth'
 
 // PUT - 更新用户信息（仅管理员）
-export const PUT = withAdminParams(async (request, context) => {
+export const PUT = withAdminParams(async (request, context, user) => {
   try {
     const { id } = await context.params
     const userId = parseInt(id)
@@ -25,6 +25,11 @@ export const PUT = withAdminParams(async (request, context) => {
       return NextResponse.json({ error: '用户不存在' }, { status: 404 })
     }
 
+    // 禁止把自己从管理员降级，避免把最后一个管理员锁在系统外
+    if (userId === user.id && existing.role === 'admin' && role && role !== 'admin') {
+      return NextResponse.json({ error: '不能将自己的管理员角色降级' }, { status: 400 })
+    }
+
     // 如果修改了邮箱，检查是否与其他用户冲突
     if (email && email.toLowerCase().trim() !== existing.email) {
       const conflict = await prisma.user.findUnique({
@@ -35,12 +40,17 @@ export const PUT = withAdminParams(async (request, context) => {
       }
     }
 
-    const updateData: Record<string, any> = {}
+    // 短密码直接拒绝，避免前端显示"更新成功"但密码没改
+    if (password && password.length < 6) {
+      return NextResponse.json({ error: '密码长度至少 6 位' }, { status: 400 })
+    }
+
+    const updateData: { email?: string; name?: string; role?: string; password?: string } = {}
 
     if (email) updateData.email = email.toLowerCase().trim()
     if (name) updateData.name = name.trim()
     if (role) updateData.role = role === 'admin' ? 'admin' : 'user'
-    if (password && password.length >= 6) {
+    if (password) {
       updateData.password = await hashPassword(password)
     }
 

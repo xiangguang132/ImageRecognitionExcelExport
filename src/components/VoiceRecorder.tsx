@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react'
 
 interface VoiceRecorderProps {
   isOpen: boolean
@@ -35,18 +35,27 @@ function getPreferredMimeType(): string {
   return ''
 }
 
+/**
+ * 录音支持度 hook（SSR 安全：服务端返回 false，水合后返回真实值，无需 effect）
+ * 页面入口可用它禁用"语音录入"按钮
+ */
+export function useVoiceRecordingSupport(): boolean {
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
+  if (!mounted) return false
+  return isRecordingSupported()
+}
+
 export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: VoiceRecorderProps) {
   const [state, setState] = useState<RecordingState>('idle')
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [supported, setSupported] = useState(false)
-
-  // 延迟检测录音支持，避免 SSR/CSR 不一致导致 hydration mismatch
-  useEffect(() => {
-    setSupported(isRecordingSupported())
-  }, [])
+  const supported = useVoiceRecordingSupport()
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -74,22 +83,25 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
     audioChunksRef.current = []
   }, [audioUrl])
 
-  // 弹窗关闭时清理
-  useEffect(() => {
-    if (!isOpen) {
-      cleanup()
-      setState('idle')
-      setAudioBlob(null)
-      setAudioUrl(null)
-      setError(null)
-      setElapsedSeconds(0)
-    }
-  }, [isOpen, cleanup])
-
   // 组件卸载时清理
   useEffect(() => {
     return () => cleanup()
   }, [cleanup])
+
+  // 重置录音状态（所有关闭弹窗的路径统一走这里，不再用 effect 监听 isOpen）
+  const resetState = useCallback(() => {
+    cleanup()
+    setState('idle')
+    setAudioBlob(null)
+    setAudioUrl(null)
+    setError(null)
+    setElapsedSeconds(0)
+  }, [cleanup])
+
+  const handleClose = useCallback(() => {
+    resetState()
+    onClose()
+  }, [resetState, onClose])
 
   // 格式化时间 MM:SS
   const formatTime = (seconds: number) => {
@@ -159,14 +171,16 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
           return next
         })
       }, 1000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[语音录制] 获取麦克风失败:', err)
-      if (err.name === 'NotAllowedError') {
+      const name = err instanceof Error ? err.name : ''
+      const message = err instanceof Error ? err.message : ''
+      if (name === 'NotAllowedError') {
         setError('麦克风权限被拒绝，请在浏览器设置中允许访问麦克风')
-      } else if (err.name === 'NotFoundError') {
+      } else if (name === 'NotFoundError') {
         setError('未检测到麦克风设备')
       } else {
-        setError('无法访问麦克风: ' + (err.message || '请检查浏览器设置'))
+        setError('无法访问麦克风: ' + (message || '请检查浏览器设置'))
       }
     }
   }
@@ -192,25 +206,24 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
     setError(null)
   }
 
-  // 发送识别
+  // 发送识别（发送后重置状态并关闭）
   const handleSend = () => {
     if (audioBlob) {
       onRecordingComplete(audioBlob)
+      resetState()
       onClose()
     }
   }
 
-  // 不支持录音
-  if (!supported) {
+  // 弹窗未打开时不渲染
+  if (!isOpen) {
     return null
   }
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
-        isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      }`}
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={handleClose}
     >
       {/* 遮罩层 */}
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
@@ -224,7 +237,7 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
         <div className="px-6 pt-5 pb-2 flex justify-between items-center">
           <h3 className="text-base font-bold text-slate-900">语音识别</h3>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -233,7 +246,9 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
           </button>
         </div>
 
-        {/* 录音区域 */}
+        {/* 录音区域（不支持的浏览器显示提示） */}
+        {supported ? (
+        <>
         <div className="px-6 py-8 flex flex-col items-center gap-5">
           {/* 录音按钮 */}
           <div className="relative">
@@ -340,7 +355,7 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
         <div className="px-6 pb-5 flex gap-2 justify-center">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="px-4 py-2.5 rounded-lg font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm text-sm"
           >
             取消
@@ -365,6 +380,18 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
             </>
           )}
         </div>
+        </>
+        ) : (
+        <div className="px-6 py-8 flex flex-col items-center gap-3 text-center">
+          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+          <p className="text-sm font-bold text-slate-700">当前浏览器不支持语音录入</p>
+          <p className="text-xs text-slate-400 leading-relaxed">请使用最新版 Chrome / Edge<br />并通过 HTTPS 或 localhost 访问后重试</p>
+        </div>
+        )}
       </div>
     </div>
   )

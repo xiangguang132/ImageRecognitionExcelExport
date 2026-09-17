@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 
 // POST - 语音识别（已登录用户均可）
@@ -9,6 +9,15 @@ export const POST = withAuth(async (request) => {
 
     if (!file) {
       return NextResponse.json({ error: '未找到音频文件' }, { status: 400 })
+    }
+
+    // 服务端校验：只接受常见录音格式，大小上限 10MB（前端校验可被绕过）
+    const ALLOWED_AUDIO_TYPES = ['audio/webm', 'audio/mp4', 'audio/x-m4a', 'audio/mpeg', 'audio/wav', 'audio/ogg']
+    if (!ALLOWED_AUDIO_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: '仅支持 WebM / M4A / MP3 / WAV / OGG 音频' }, { status: 400 })
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: '音频过大，请上传 10MB 以内的音频' }, { status: 400 })
     }
 
     // 将音频转为 base64
@@ -52,6 +61,8 @@ export const POST = withAuth(async (request) => {
       'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
       {
         method: 'POST',
+        // AI hanging 时最多等 90 秒（音频处理更耗时），避免 worker 被拖死
+        signal: AbortSignal.timeout(90_000),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
@@ -142,6 +153,12 @@ export const POST = withAuth(async (request) => {
     return NextResponse.json(parsed)
   } catch (error) {
     console.error('[API] ❌ 服务器错误:', error)
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      return NextResponse.json(
+        { error: 'AI 识别超时，请重试' },
+        { status: 504 }
+      )
+    }
     return NextResponse.json(
       { error: '服务器内部错误' },
       { status: 500 }

@@ -7,8 +7,12 @@ import { StudentInfo, cleanStudentId, generateEmail, mapRole } from './recognize
 
 /**
  * 调用后端 API 进行 AI 语音识别
+ * @param fetcher 可注入的请求函数（页面层传入 authFetch 以携带登录态，默认 fetch）
  */
-export async function recognizeVoiceWithAI(audioBlob: Blob): Promise<StudentInfo> {
+export async function recognizeVoiceWithAI(
+  audioBlob: Blob,
+  fetcher: (url: string, options?: RequestInit) => Promise<Response> = fetch
+): Promise<StudentInfo> {
   console.log('[前端] ===== 开始 AI 语音识别 =====')
   console.log('[前端] 音频大小:', (audioBlob.size / 1024).toFixed(1) + 'KB', '| 类型:', audioBlob.type)
 
@@ -25,7 +29,7 @@ export async function recognizeVoiceWithAI(audioBlob: Blob): Promise<StudentInfo
   console.log('[前端] 发送请求到 /api/voice-recognize ...')
   const startTime = Date.now()
 
-  const response = await fetch('/api/voice-recognize', {
+  const response = await fetcher('/api/voice-recognize', {
     method: 'POST',
     body: formData
   })
@@ -34,9 +38,14 @@ export async function recognizeVoiceWithAI(audioBlob: Blob): Promise<StudentInfo
   console.log('[前端] 语音识别 API 响应耗时:', elapsed, 'ms')
 
   if (!response.ok) {
-    const err = await response.json()
-    console.error('[前端] ❌ 语音识别 API 返回错误:', err)
-    throw new Error(err.error || '语音识别失败')
+    // 错误体可能不是 JSON（如网关 502 页面），解析失败时给默认提示
+    let message = '语音识别失败'
+    try {
+      const err = await response.json()
+      message = err.error || message
+    } catch { /* 忽略解析失败 */ }
+    console.error('[前端] ❌ 语音识别 API 返回错误:', message)
+    throw new Error(message)
   }
 
   const data = await response.json()

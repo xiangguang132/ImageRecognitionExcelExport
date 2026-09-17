@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef, DragEvent } from 'react'
+import { useState, useRef, DragEvent } from 'react'
 import Modal from '@/components/ui/Modal'
+import { toast } from '@/components/ui/Toast'
 
 interface ImageUploaderProps {
   onImageUpload: (file: File) => void
@@ -10,7 +11,8 @@ interface ImageUploaderProps {
   shouldClear: boolean
 }
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/bmp', 'image/gif']
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp']
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB，与后端 /api/recognize 上限一致
 
 export default function ImageUploader({ onImageUpload, onClear, isLoading, shouldClear }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null)
@@ -21,12 +23,22 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
 
-  useEffect(() => {
+  // shouldClear 变化时重置预览（渲染期调整，避免 effect 内 setState）
+  const [prevShouldClear, setPrevShouldClear] = useState(shouldClear)
+  if (shouldClear !== prevShouldClear) {
+    setPrevShouldClear(shouldClear)
     if (shouldClear) setPreview(null)
-  }, [shouldClear])
+  }
 
   const processFile = (file: File) => {
-    if (!ACCEPTED_TYPES.includes(file.type)) return
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      toast.error('不支持的图片格式，请上传 JPG / PNG / WebP / GIF / BMP')
+      return
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('图片过大，请上传 10MB 以内的图片')
+      return
+    }
     const reader = new FileReader()
     reader.onload = () => setPreview(reader.result as string)
     reader.readAsDataURL(file)
@@ -150,7 +162,7 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
                 </div>
                 <div className="space-y-1">
                   <p className="text-slate-700 font-bold text-base">点击上传学生证图片</p>
-                  <p className="text-xs text-slate-400 font-medium">支持 JPG, PNG, BMP 格式，或直接拖拽图片到此处</p>
+                  <p className="text-xs text-slate-400 font-medium">支持 JPG、PNG、WebP、GIF、BMP（10MB 以内），或直接拖拽图片到此处</p>
                 </div>
               </>
             )}

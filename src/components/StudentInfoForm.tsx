@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { StudentInfo, cleanStudentId, generateEmail } from '@/lib/recognize'
 import Modal from '@/components/ui/Modal'
 import { toast } from '@/components/ui/Toast'
@@ -28,26 +28,24 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
 
-  // 当识别结果返回时，更新表单；当识别结果清空时，重置表单
-  useEffect(() => {
-    if (initialData) {
-      setFormData(initialData)
-    } else {
-      setFormData(emptyForm)
-    }
-  }, [initialData])
+  // 识别结果变化时同步表单（渲染期调整，避免 effect 内 setState）
+  const [prevInitialData, setPrevInitialData] = useState<StudentInfo | null>(initialData)
+  if (prevInitialData !== initialData) {
+    setPrevInitialData(initialData)
+    setFormData(initialData ?? emptyForm)
+  }
 
-  // 学号变化时自动更新邮箱
-  useEffect(() => {
-    const cleanId = cleanStudentId(formData.studentId)
-    if (cleanId) {
-      setFormData(prev => ({ ...prev, email: generateEmail(cleanId) }))
-    }
-  }, [formData.studentId])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData(prev => {
+      const next = { ...prev, [name]: value }
+      // 学号变化时自动派生邮箱
+      if (name === 'studentId') {
+        const cleanId = cleanStudentId(value)
+        if (cleanId) next.email = generateEmail(cleanId)
+      }
+      return next
+    })
   }
 
   // 邮箱失焦时确保后缀存在
@@ -222,7 +220,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 <select
                   name="role"
                   value={formData.role}
-                  onChange={handleChange as any}
+                  onChange={handleChange}
                   className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm appearance-none group-hover:shadow-md"
                 >
                   <option value="">请选择角色</option>

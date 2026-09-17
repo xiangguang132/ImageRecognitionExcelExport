@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 
 // POST - 图片识别（已登录用户均可）
@@ -9,6 +9,15 @@ export const POST = withAuth(async (request) => {
 
     if (!file) {
       return NextResponse.json({ error: '未找到图片' }, { status: 400 })
+    }
+
+    // 服务端校验：只接受图片类型，大小上限 10MB（前端校验可被绕过）
+    const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp']
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: '仅支持 JPG / PNG / WebP / GIF / BMP 图片' }, { status: 400 })
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: '图片过大，请上传 10MB 以内的图片' }, { status: 400 })
     }
 
     // 将图片转为 base64
@@ -36,6 +45,8 @@ export const POST = withAuth(async (request) => {
       'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
       {
         method: 'POST',
+        // AI hanging 时最多等 60 秒，避免 worker 被拖死
+        signal: AbortSignal.timeout(60_000),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
@@ -116,6 +127,12 @@ export const POST = withAuth(async (request) => {
     return NextResponse.json(parsed)
   } catch (error) {
     console.error('[API] ❌ 服务器错误:', error)
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      return NextResponse.json(
+        { error: 'AI 识别超时，请重试' },
+        { status: 504 }
+      )
+    }
     return NextResponse.json(
       { error: '服务器内部错误' },
       { status: 500 }

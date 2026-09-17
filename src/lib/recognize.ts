@@ -27,11 +27,11 @@ export function cleanStudentId(raw: string): string {
 
 /**
  * 根据学号生成默认邮箱
- * 规则：学号去掉最后一位数字 + @connect.um.edu.mo
+ * 规则：学号去掉最后一位 + @connect.um.edu.mo
  * 例如 AC201301 → ac20130@connect.um.edu.mo
  */
 export function generateEmail(studentId: string): string {
-  // 只去掉最后一位数字，而不是所有末尾数字
+  // 按甲方规格：无条件去掉最后一位（学号末位恒为数字校验位）
   const prefix = studentId.length > 1 ? studentId.slice(0, -1) : studentId
   const email = prefix.toLowerCase() + '@connect.um.edu.mo'
   console.log('[前端] 邮箱生成:', studentId, '→', email)
@@ -59,8 +59,12 @@ export function mapRole(raw: string): string {
 
 /**
  * 调用后端 API 进行 AI 视觉识别
+ * @param fetcher 可注入的请求函数（页面层传入 authFetch 以携带登录态，默认 fetch）
  */
-export async function recognizeWithAI(file: File): Promise<StudentInfo> {
+export async function recognizeWithAI(
+  file: File,
+  fetcher: (url: string, options?: RequestInit) => Promise<Response> = fetch
+): Promise<StudentInfo> {
   console.log('[前端] ===== 开始 AI 识别 =====')
   console.log('[前端] 文件:', file.name, '|', (file.size / 1024).toFixed(1) + 'KB')
 
@@ -70,7 +74,7 @@ export async function recognizeWithAI(file: File): Promise<StudentInfo> {
   console.log('[前端] 发送请求到 /api/recognize ...')
   const startTime = Date.now()
 
-  const response = await fetch('/api/recognize', {
+  const response = await fetcher('/api/recognize', {
     method: 'POST',
     body: formData
   })
@@ -79,9 +83,14 @@ export async function recognizeWithAI(file: File): Promise<StudentInfo> {
   console.log('[前端] API 响应耗时:', elapsed, 'ms')
 
   if (!response.ok) {
-    const err = await response.json()
-    console.error('[前端] ❌ API 返回错误:', err)
-    throw new Error(err.error || '识别失败')
+    // 错误体可能不是 JSON（如网关 502 页面），解析失败时给默认提示
+    let message = '识别失败'
+    try {
+      const err = await response.json()
+      message = err.error || message
+    } catch { /* 忽略解析失败 */ }
+    console.error('[前端] ❌ API 返回错误:', message)
+    throw new Error(message)
   }
 
   const data = await response.json()
