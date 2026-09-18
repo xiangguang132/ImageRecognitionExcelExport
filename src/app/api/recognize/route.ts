@@ -36,14 +36,14 @@ export const POST = withAuth(async (request) => {
       try {
         const meta = await sharp(buffer).metadata()
         const needShrink =
-          (meta.width && meta.width > 1600) ||
-          (meta.height && meta.height > 1600) ||
+          (meta.width && meta.width > 1280) ||
+          (meta.height && meta.height > 1280) ||
           buffer.length > 1024 * 1024
         if (needShrink) {
           const shrunk = await sharp(buffer)
             .rotate() // 按 EXIF 自动摆正
-            .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 80 })
+            .resize({ width: 1280, height: 1280, fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 75 })
             .toBuffer()
           if (shrunk && shrunk.length > 0) {
             console.log(`[API] 服务端二次压缩: ${(buffer.length / 1024).toFixed(0)}KB → ${(shrunk.length / 1024).toFixed(0)}KB`)

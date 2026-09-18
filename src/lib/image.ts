@@ -5,8 +5,8 @@
  * 上传慢 + base64 膨胀 33% + 千问按分辨率计 image token 推理慢。
  * 压到 200~500KB 后上传和推理双加速，学生证 OCR 精度不受影响。
  */
-export const MAX_IMAGE_DIM = 1600 // 长边上限（px）
-export const IMAGE_QUALITY = 0.85 // JPEG 质量
+export const MAX_IMAGE_DIM = 1280 // 长边上限（px）：1600→1280 再降约 36% 像素，千问 image token 同步减少
+export const IMAGE_QUALITY = 0.8 // JPEG 质量：学生证摆拍文字在 1280px 下 OCR 无损
 
 const COMPRESSIBLE = ['image/jpeg', 'image/png', 'image/webp']
 

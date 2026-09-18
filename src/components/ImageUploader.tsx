@@ -60,8 +60,8 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
       toast.info('上传文件过大，可能会影响识别速度哦，可以尝试语音识别功能哦~')
     }
     try {
-      // 手机原图先压缩（长边 1600px / JPEG 0.85），再预览再上传：
-      // 8MB 原图通常压到 300KB 左右，上传和 AI 推理都快一个数量级
+      // 手机原图先压缩（长边 1280px / JPEG 0.8），再预览再上传：
+      // 6~8MB 原图通常压到 150~300KB，上传和 AI 推理双加速
       const beforeKB = file.size / 1024
       const compressed = await compressImage(file)
       if (compressed.size > MAX_FILE_SIZE) {

@@ -29,6 +29,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# app runtime logs (nohup output, never commit)
+app.log
+app-*.log
+
 # IDE / editor
 .vscode/
 .idea/
