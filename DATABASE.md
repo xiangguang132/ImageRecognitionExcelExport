@@ -1,9 +1,13 @@
 # 数据库说明（SQLite 单表）
 
-## 连接信息
+## 连接信息（生产 / 测试分离）
 
-`DATABASE_URL="file:./dev.db"`（`.env`），文件位置 `prisma/dev.db`
-（相对 `prisma/` 目录解析）。
+- **生产库**：云服务器 `.env` 中 `DATABASE_URL="file:./prod.db"`，
+  文件位置 `prisma/prod.db`（相对 `prisma/` 目录解析）。线上真实数据只进此库。
+- **开发/测试库**：本地默认 `DATABASE_URL="file:./dev.db"`（`prisma/dev.db`）。
+- **铁律**：`npx tsx prisma/seed-test-data.ts`（25 条测试账号）只能在 `dev.db` 上跑，
+  禁止把 `DATABASE_URL` 指向 `prod.db` 后执行任何 seed/测试脚本。
+- 切换前备份：`cp prisma/prod.db ~/db-backup/prod.db.$(date +%Y%m%d-%H%M)`。
 
 ## 设计约定
 
@@ -12,8 +16,8 @@
   （`ADMIN_EMAIL / ADMIN_PASSWORD / ADMIN_NAME`），不在 `users` 表中落盘，
   登录与鉴权时在内存中构造（`id = 0, role = "admin"`）。
 - **学生账号**：`role` 恒为 `"user"`；在校身份（学生/教师）存 `identity` 列。
-- **登录分离**：学生用**学号**登录（`POST /api/auth/login`，页面 `/login`）；
-  管理员用**邮箱**登录（`POST /api/auth/admin-login`，页面 `/admin/login`）。
+- **登录分离**：学生用**学号**登录（`POST /api/auth/login`，页面 `/card/login`）；
+  管理员用**邮箱**登录（`POST /api/auth/admin-login`，页面 `/card/manager/login`）。
 - **默认密码**：管理员导入/录入学生时密码为 `123456`（bcrypt 入库），
   `must_change_password = 1`，学生首次登录必须强制改密。
 - **邮箱规则（甲方固定）**：默认 `学号去尾 + @connect.um.edu.mo`
