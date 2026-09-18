@@ -2,6 +2,7 @@
 
 import { useState, useRef, DragEvent } from 'react'
 import { page } from '@/lib/api-path'
+import { compressImage } from '@/lib/image'
 import Modal from '@/components/ui/Modal'
 import { toast } from '@/components/ui/Toast'
 
@@ -13,7 +14,8 @@ interface ImageUploaderProps {
 }
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp']
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB，与后端 /api/recognize 上限一致
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB，与后端 /api/recognize 上限一致（压缩后判定）
+const MAX_RAW_SIZE = 30 * 1024 * 1024 // 原图超过 30MB 直接拒收，防 canvas 爆内存
 
 export default function ImageUploader({ onImageUpload, onClear, isLoading, shouldClear }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null)
@@ -31,19 +33,34 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
     if (shouldClear) setPreview(null)
   }
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     if (!ACCEPTED_TYPES.includes(file.type)) {
       toast.error('不支持的图片格式，请上传 JPG / PNG / WebP / GIF / BMP')
       return
     }
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error('图片过大，请上传 10MB 以内的图片')
+    if (file.size > MAX_RAW_SIZE) {
+      toast.error('图片过大，请上传 30MB 以内的图片')
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => setPreview(reader.result as string)
-    reader.readAsDataURL(file)
-    onImageUpload(file)
+    try {
+      // 手机原图先压缩（长边 1600px / JPEG 0.85），再预览再上传：
+      // 8MB 原图通常压到 300KB 左右，上传和 AI 推理都快一个数量级
+      const beforeKB = file.size / 1024
+      const compressed = await compressImage(file)
+      if (compressed.size > MAX_FILE_SIZE) {
+        toast.error('图片过大，请上传 10MB 以内的图片')
+        return
+      }
+      if (compressed !== file) {
+        console.log(`[上传] 图片已压缩: ${beforeKB.toFixed(0)}KB → ${(compressed.size / 1024).toFixed(0)}KB`)
+      }
+      const reader = new FileReader()
+      reader.onload = () => setPreview(reader.result as string)
+      reader.readAsDataURL(compressed)
+      onImageUpload(compressed)
+    } catch {
+      toast.error('图片处理失败，请重试')
+    }
   }
 
   // --- 拖拽 ---
