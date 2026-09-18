@@ -67,27 +67,27 @@ export const PUT = withAdminParams(async (request, context) => {
       )
     }
 
-    // 学号改动时判重（与 POST 同一规则：未删除记录中学号已存在则拒绝）
+    // 学号改动时判重（与 POST 同一规则；含已删除记录，避免撞唯一约束 500）
     const normalizedNewId = typeof newStudentId === 'string' ? newStudentId.trim() : ''
     if (normalizedNewId && normalizedNewId !== updated.studentId) {
       const conflict = await prisma.user.findFirst({
-        where: { studentId: normalizedNewId, isDel: 0 }
+        where: { studentId: normalizedNewId }
       })
       if (conflict) {
         return NextResponse.json(
-          { error: '该学号已存在，请勿重复录入' },
+          { error: conflict.isDel === 1 ? '该学号曾被使用（原记录已删除），请先恢复原记录' : '该学号已存在，请勿重复录入' },
           { status: 409 }
         )
       }
     }
 
-    // 邮箱改动时判重（邮箱为登录键）
+    // 邮箱改动时判重（含已删除记录，避免撞唯一约束 500）
     const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : ''
     if (normalizedEmail && normalizedEmail !== updated.email) {
-      const conflict = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+      const conflict = await prisma.user.findFirst({ where: { email: normalizedEmail } })
       if (conflict) {
         return NextResponse.json(
-          { error: '该邮箱已存在' },
+          { error: conflict.isDel === 1 ? '该邮箱曾被使用（原记录已删除），请更换邮箱或先恢复原记录' : '该邮箱已存在' },
           { status: 409 }
         )
       }

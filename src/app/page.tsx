@@ -210,7 +210,9 @@ export default function Home() {
     toast.success(
       emailConflict === 'suffix' && row?.email
         ? `提交成功，邮箱已调整为 ${row.email}`
-        : isAdmin ? '提交信息成功' : '本人档案已更新'
+        : row?.revived
+          ? '曾删除的记录已恢复并更新'
+          : isAdmin ? '提交信息成功' : '本人档案已更新'
     )
     setRecognizeData(null)
 

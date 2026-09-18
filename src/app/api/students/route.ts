@@ -123,12 +123,23 @@ export const POST = withAdmin(async (request) => {
       )
     }
 
-    // 邮箱冲突处理（排除自己后依然被占用的情况）
+    // 邮箱冲突处理（selfId：更新场景下排除自己；新建传 null）
     // 返回：resolvedEmail（可入库的邮箱，'' 表示不存）或直接返回 Response（409）
+    // 注意：用 findFirst 而不用 findUnique，以便区分占用者是否已被删除
     const resolveEmail = async (selfId: number | null): Promise<string | Response> => {
       if (!email) return ''
-      const existingEmail = await prisma.user.findUnique({ where: { email } })
+      const existingEmail = await prisma.user.findFirst({ where: { email } })
       if (existingEmail && existingEmail.id !== selfId) {
+        // 占用者是已删除记录：邮箱不可直接复用（唯一约束），提示更换或恢复
+        if (existingEmail.isDel === 1) {
+          return NextResponse.json(
+            {
+              error: '该邮箱曾被使用（原记录已删除），请更换邮箱，或恢复原记录后再修改',
+              conflict: true
+            },
+            { status: 409 }
+          )
+        }
         if (emailStrategy === 'suffix') {
           const resolved = await resolveEmailWithRandomSuffix(email)
           if (!resolved) {
@@ -150,7 +161,7 @@ export const POST = withAdmin(async (request) => {
       return email
     }
 
-    // ---- 管理员：新建 ----
+    // ---- 管理员：新建（同学号已删除记录 → 复活，避免唯一约束 500） ----
     // 学号去重（未删除记录中已存在则拒绝，避免重复录入）
     const existingSid = await prisma.user.findFirst({
       where: { studentId, isDel: 0 }
@@ -158,6 +169,40 @@ export const POST = withAdmin(async (request) => {
     if (existingSid) {
       return NextResponse.json(
         { error: '该学号已存在，请勿重复录入' },
+        { status: 409 }
+      )
+    }
+
+    // 同学号已删除记录：复活并用新资料覆盖，密码重置为默认（与新建一致），
+    // 避免撞唯一约束导致 500。先于邮箱冲突处理：占用者若正是该行则直接复活。
+    // 仅当邮箱为空、或邮箱占用者正是该行时才可复活，否则按邮箱冲突处理
+    const deletedSid = await prisma.user.findFirst({
+      where: { studentId, isDel: 1 }
+    })
+    if (deletedSid) {
+      const emailHolder = email ? await prisma.user.findFirst({ where: { email } }) : null
+      if (!emailHolder || emailHolder.id === deletedSid.id) {
+        const revived = await prisma.user.update({
+          where: { id: deletedSid.id },
+          data: {
+            name: body.name || null,
+            email: email || null,
+            password: await hashPassword(DEFAULT_PASSWORD),
+            major: body.major || null,
+            identity: identity || null,
+            interestDirection: body.interestDirection || null,
+            interestTopic: body.interestTopic || null,
+            mustChangePassword: 1,
+            isDel: 0
+          }
+        })
+        return NextResponse.json({ ...toStudentRow(revived), revived: true })
+      }
+      return NextResponse.json(
+        {
+          error: '该学号曾被删除，但所填邮箱已被另一条记录占用，请更换邮箱后重试',
+          conflict: true
+        },
         { status: 409 }
       )
     }
