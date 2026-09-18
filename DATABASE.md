@@ -27,7 +27,7 @@
 |---|---|---|
 | id | INTEGER PK | 自增 |
 | email | TEXT UNIQUE，可空 | 邮箱（碰撞时可空；学生登录键是学号） |
-| student_id | TEXT UNIQUE，可空 | 学号（学生登录键） |
+| student_id | TEXT UNIQUE，可空 | 学号（本分支：不登记末位数字，去尾后入库；学生输完整学号也可登录） |
 | name | TEXT | 姓名 |
 | password | TEXT | bcrypt hash |
 | role | TEXT | 权限，DB 中恒为 `user` |

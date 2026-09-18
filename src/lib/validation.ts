@@ -93,6 +93,18 @@ function toStr(value: unknown): string {
 }
 
 /**
+ * 学号归一化（本分支规则：不登记末位数字）。
+ * 清洗（只保留字母数字、大写）后无条件去掉最后一位再入库/判重/登录，
+ * 例如 "A-C2-0130-1" → "AC201301" → 登记为 "AC20130"。
+ * 注意：该规则假设去尾后依然唯一，若出现末位不同的重复学号，入库时按重复拒绝。
+ */
+export function normalizeStudentId(raw: unknown): string {
+  const cleaned = toStr(raw).replace(/[^0-9A-Z]/gi, '').toUpperCase()
+  if (cleaned.length <= 1) return ''
+  return cleaned.slice(0, -1)
+}
+
+/**
  * 查找文本命中的第一个敏感词，未命中返回 null。
  * 归一化：小写 + 去空白（含全角空格），两次都匹配，防止拆词绕过。
  */

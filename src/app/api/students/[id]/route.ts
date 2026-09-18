@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { validateStudentInput } from '@/lib/validation'
+import { validateStudentInput, normalizeStudentId } from '@/lib/validation'
 import { withAdminParams } from '@/lib/auth-middleware'
 
 // 单表说明：见 ../route.ts。密码只能经 /api/auth/change-password 修改，
@@ -67,8 +67,8 @@ export const PUT = withAdminParams(async (request, context) => {
       )
     }
 
-    // 学号改动时判重（与 POST 同一规则：未删除记录中学号已存在则拒绝）
-    const normalizedNewId = typeof newStudentId === 'string' ? newStudentId.trim() : ''
+    // 学号改动时判重（本分支规则：归一化去尾后比较；未删除记录中已存在则拒绝）
+    const normalizedNewId = normalizeStudentId(typeof newStudentId === 'string' ? newStudentId : '')
     if (normalizedNewId && normalizedNewId !== updated.studentId) {
       const conflict = await prisma.user.findFirst({
         where: { studentId: normalizedNewId, isDel: 0 }

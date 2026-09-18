@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { validateStudentInput } from '@/lib/validation'
+import { validateStudentInput, normalizeStudentId } from '@/lib/validation'
 import { hashPassword } from '@/lib/auth'
 import { withAdmin } from '@/lib/auth-middleware'
 
@@ -95,11 +95,19 @@ export const POST = withAdmin(async (request) => {
     const body = await request.json()
 
     // 必填字段：学号 + 姓名（空对象 / 全空不再入库）
-    const studentId = typeof body.studentId === 'string' ? body.studentId.trim() : ''
+    // 本分支规则：学号不登记末位数字，归一化（去尾）后再判重入库
+    const rawStudentId = typeof body.studentId === 'string' ? body.studentId.trim() : ''
     const name = typeof body.name === 'string' ? body.name.trim() : ''
-    if (!studentId || !name) {
+    if (!rawStudentId || !name) {
       return NextResponse.json(
         { error: '请填写学号和姓名' },
+        { status: 400 }
+      )
+    }
+    const studentId = normalizeStudentId(rawStudentId)
+    if (!studentId) {
+      return NextResponse.json(
+        { error: '学号格式不正确' },
         { status: 400 }
       )
     }

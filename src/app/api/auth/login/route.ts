@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyPassword, generateToken } from '@/lib/auth'
+import { normalizeStudentId } from '@/lib/validation'
 
 // POST - 学生登录（学号 + 密码 → JWT）
 // 管理员请走 POST /api/auth/admin-login（邮箱 + 密码），两条链路分离。
@@ -16,13 +17,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 学号归一化：去空格 + 大写（与录入时的 cleanStudentId 一致）
-    const normalizedId = String(studentId).trim().toUpperCase()
+    // 学号归一化：去空格 + 大写 + 去末位（本分支不登记末位数字）；
+    // 学生输完整学号也能登录；未迁移的旧数据用原文回退查一次
+    const normalizedId = normalizeStudentId(studentId)
+    const fallbackId = String(studentId).trim().toUpperCase().replace(/[^0-9A-Z]/g, '')
 
     // 查找学生账号（排除已删除的；DB 中只有 role = user 的学生）
-    const user = await prisma.user.findFirst({
-      where: { studentId: normalizedId, isDel: 0, role: 'user' }
-    })
+    let user = normalizedId
+      ? await prisma.user.findFirst({
+          where: { studentId: normalizedId, isDel: 0, role: 'user' }
+        })
+      : null
+    if (!user && fallbackId) {
+      user = await prisma.user.findFirst({
+        where: { studentId: fallbackId, isDel: 0, role: 'user' }
+      })
+    }
 
     if (!user) {
       return NextResponse.json(
