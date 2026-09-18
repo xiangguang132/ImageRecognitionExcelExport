@@ -11,10 +11,10 @@ import { withAdmin } from '@/lib/auth-middleware'
 // 默认初始密码（bcrypt 入库，学生首次登录强制改密）
 const DEFAULT_PASSWORD = '123456'
 
-const RANDOM_LETTERS = 'abcdefghijklmnopqrstuvwxyz'
+const RANDOM_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
 
 /**
- * 邮箱碰撞时在 @ 前追加随机字母（如 ac20130@ → ac20130x@），
+ * 邮箱碰撞时在 @ 前追加两位随机后缀（数字/字母，如 ac20130@ → ac20130aa@），
  * 最多重试 50 次；返回可用的新邮箱，分配失败返回 null。
  */
 async function resolveEmailWithRandomSuffix(email: string): Promise<string | null> {
@@ -22,8 +22,9 @@ async function resolveEmailWithRandomSuffix(email: string): Promise<string | nul
   if (at <= 0) return null
   const prefix = email.slice(0, at)
   const domain = email.slice(at)
+  const pick = () => RANDOM_CHARS[Math.floor(Math.random() * RANDOM_CHARS.length)]
   for (let i = 0; i < 50; i++) {
-    const candidate = `${prefix}${RANDOM_LETTERS[Math.floor(Math.random() * RANDOM_LETTERS.length)]}${domain}`
+    const candidate = `${prefix}${pick()}${pick()}${domain}`
     const taken = await prisma.user.findUnique({ where: { email: candidate } })
     if (!taken) return candidate
   }
@@ -104,10 +105,15 @@ export const POST = withAdmin(async (request) => {
       )
     }
 
-    const emailStrategy = body.emailConflict === 'skip' ? 'skip'
-      : body.emailConflict === 'suffix' ? 'suffix' : null
+    const emailStrategy = body.emailConflict === 'suffix' ? 'suffix' : null
     let email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : ''
-    if (emailStrategy === 'skip') email = ''
+    // 管理员端邮箱必填：碰撞时要么不提交，要么接受系统追加的两位随机后缀
+    if (!email) {
+      return NextResponse.json(
+        { error: '请填写邮箱' },
+        { status: 400 }
+      )
+    }
 
     // 在校身份：兼容新旧字段名（identity / role）
     const identity = typeof body.identity === 'string' && body.identity
@@ -152,7 +158,7 @@ export const POST = withAdmin(async (request) => {
         }
         return NextResponse.json(
           {
-            error: '该邮箱已被使用（可能是学号去尾后相同），请选择不填邮箱、追加随机字母，或手工修改邮箱',
+            error: '该邮箱已被使用（可能是学号去尾后相同），要么不提交，要么接受系统追加的两位随机后缀',
             conflict: true
           },
           { status: 409 }

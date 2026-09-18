@@ -26,6 +26,28 @@ export function cleanStudentId(raw: string): string {
 }
 
 /**
+ * 学校邮箱后缀（固定）
+ */
+export const EMAIL_SUFFIX = '@connect.um.edu.mo'
+
+/**
+ * 邮箱输入规范化：无 @ 则补后缀；后缀不对则替换为正确后缀；
+ * 空值或无前缀（@开头）不动，交由后端校验。
+ * 返回规范后的值与是否发生过修正。
+ */
+export function normalizeEmailInput(value: string): { email: string; fixed: boolean } {
+  const val = (value || '').trim()
+  if (!val) return { email: '', fixed: false }
+  if (!val.includes('@')) return { email: val + EMAIL_SUFFIX, fixed: true }
+  const at = val.indexOf('@')
+  const prefix = val.slice(0, at)
+  const domain = val.slice(at + 1).toLowerCase()
+  if (!prefix) return { email: val, fixed: false }
+  if ('@' + domain === EMAIL_SUFFIX) return { email: val, fixed: false }
+  return { email: prefix + EMAIL_SUFFIX, fixed: true }
+}
+
+/**
  * 根据学号生成默认邮箱
  * 规则（甲方固定要求）：学号去掉最后一位 + @connect.um.edu.mo
  * 例如 AC201301 → ac20130@connect.um.edu.mo
@@ -36,7 +58,7 @@ export function cleanStudentId(raw: string): string {
 export function generateEmail(studentId: string): string {
   // 按甲方规格：无条件去掉最后一位（学号末位恒为数字校验位）
   const prefix = studentId.length > 1 ? studentId.slice(0, -1) : studentId
-  const email = prefix.toLowerCase() + '@connect.um.edu.mo'
+  const email = prefix.toLowerCase() + EMAIL_SUFFIX
   console.log('[前端] 邮箱生成:', studentId, '→', email)
   return email
 }

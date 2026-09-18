@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { StudentInfo, cleanStudentId, generateEmail } from '@/lib/recognize'
+import { StudentInfo, cleanStudentId, generateEmail, normalizeEmailInput, EMAIL_SUFFIX } from '@/lib/recognize'
 import Modal from '@/components/ui/Modal'
 import { toast } from '@/components/ui/Toast'
 
@@ -52,9 +52,8 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
     })
   }
 
-  // 邮箱失焦时确保后缀存在
+  // 邮箱失焦时规范后缀：空值从学号重生成；无 @ 补后缀；后缀不对替换为学校后缀
   const handleEmailBlur = () => {
-    const suffix = '@connect.um.edu.mo'
     const val = formData.email.trim()
     if (!val) {
       // 空值则从学号重新生成
@@ -62,9 +61,12 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
       if (cleanId) {
         setFormData(prev => ({ ...prev, email: generateEmail(cleanId) }))
       }
-    } else if (!val.includes('@')) {
-      // 用户只输了前缀，补上后缀
-      setFormData(prev => ({ ...prev, email: val + suffix }))
+      return
+    }
+    const { email, fixed } = normalizeEmailInput(val)
+    if (fixed) {
+      setFormData(prev => ({ ...prev, email }))
+      toast.info(`邮箱后缀已规范为 ${EMAIL_SUFFIX}`)
     }
   }
 

@@ -81,8 +81,14 @@ export const PUT = withAdminParams(async (request, context) => {
       }
     }
 
-    // 邮箱改动时判重（含已删除记录，避免撞唯一约束 500）
+    // 邮箱改动时判重（含已删除记录，避免撞唯一约束 500；管理员端邮箱必填，不可清空）
     const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : ''
+    if (email === '') {
+      return NextResponse.json(
+        { error: '邮箱不能为空' },
+        { status: 400 }
+      )
+    }
     if (normalizedEmail && normalizedEmail !== updated.email) {
       const conflict = await prisma.user.findFirst({ where: { email: normalizedEmail } })
       if (conflict) {
@@ -98,8 +104,7 @@ export const PUT = withAdminParams(async (request, context) => {
       data: {
         studentId: normalizedNewId || undefined,
         name: name ?? undefined,
-        // 空字符串表示清空邮箱（存 NULL）；非空则更新
-        email: email === '' ? null : normalizedEmail || undefined,
+        email: normalizedEmail || undefined,
         major: major ?? undefined,
         identity: identity ?? undefined,
         interestDirection: interestDirection ?? undefined,

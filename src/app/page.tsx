@@ -153,13 +153,13 @@ export default function Home() {
     }
   }
 
-  // 邮箱碰撞待处理数据（409 + conflict 时暂存，弹窗让用户二选一）
+  // 邮箱碰撞待处理数据（409 + conflict 时暂存，弹窗让用户选择）
   const [conflictData, setConflictData] = useState<StudentInfo | null>(null)
   const [conflictResolving, setConflictResolving] = useState(false)
 
-  // 提交学生信息（emailConflict: 碰撞时的处理策略 skip=不填邮箱 / suffix=追加随机字母）
-  // 学生走独立接口 PUT /api/students/mine，只提交兴趣字段，硬性信息后端直接忽略
-  const submitStudent = async (data: StudentInfo, emailConflict?: 'skip' | 'suffix') => {
+  // 提交学生信息（emailConflict: 碰撞时接受系统追加两位随机后缀）
+  // 管理员端邮箱必填，不提供不填选项；学生走独立接口 PUT /api/students/mine
+  const submitStudent = async (data: StudentInfo, emailConflict?: 'suffix') => {
     if (!isAdmin) {
       const response = await authFetch('/api/students/mine', {
         method: 'PUT',
@@ -228,12 +228,12 @@ export default function Home() {
     return row
   }
 
-  // 碰撞弹窗中的选择：不填邮箱 / 追加随机字母
-  const resolveConflict = async (strategy: 'skip' | 'suffix') => {
+  // 碰撞弹窗中的选择：接受系统追加的两位随机后缀
+  const resolveConflict = async () => {
     if (!conflictData) return
     setConflictResolving(true)
     try {
-      await submitStudent(conflictData, strategy)
+      await submitStudent(conflictData, 'suffix')
       setConflictData(null)
     } catch (error: unknown) {
       console.error('提交失败:', error)
@@ -463,7 +463,7 @@ export default function Home() {
 
       <logoutConfirm.Dialog />
 
-      {/* 邮箱碰撞二选一 */}
+      {/* 邮箱碰撞：不提交，或接受系统修改 */}
       <Modal
         isOpen={!!conflictData}
         onClose={() => setConflictData(null)}
@@ -473,29 +473,22 @@ export default function Home() {
           <p>
             按甲方规则（学号去尾）生成的邮箱
             <span className="font-bold text-slate-900"> {conflictData?.email || '(空)'} </span>
-            已被其他学生使用，数据未入库。请选择处理方式：
+            已被其他学生使用，数据未入库。邮箱必填，请选择处理方式：
           </p>
           <div className="flex flex-col gap-2 pt-1">
             <button
-              onClick={() => resolveConflict('skip')}
-              disabled={conflictResolving}
-              className="w-full py-2.5 rounded-xl font-bold text-sm bg-white border-2 border-slate-200 hover:border-indigo-400 hover:text-indigo-700 transition-all disabled:opacity-50"
-            >
-              不填邮箱，直接提交
-            </button>
-            <button
-              onClick={() => resolveConflict('suffix')}
+              onClick={() => resolveConflict()}
               disabled={conflictResolving}
               className="w-full py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 transition-all disabled:opacity-50"
             >
-              {conflictResolving ? '提交中...' : '在 @ 前追加随机字母后提交'}
+              {conflictResolving ? '提交中...' : '接受系统修改（@ 前追加两位随机后缀）'}
             </button>
             <button
               onClick={() => setConflictData(null)}
               disabled={conflictResolving}
               className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-50"
             >
-              手工修改邮箱（关闭后在表单中修改再提交）
+              不提交，手工修改邮箱后重新提交
             </button>
           </div>
         </div>

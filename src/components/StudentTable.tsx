@@ -5,6 +5,7 @@ import Modal from '@/components/ui/Modal'
 import Pagination from '@/components/ui/Pagination'
 import { useConfirm } from '@/components/ui/useConfirm'
 import { toast } from '@/components/ui/Toast'
+import { normalizeEmailInput, EMAIL_SUFFIX } from '@/lib/recognize'
 
 export interface Student {
   id: number
@@ -221,6 +222,11 @@ export default function StudentTable({
 
     if (!editForm.studentId?.trim() || !editForm.name?.trim()) {
       toast.error('学号和姓名不能为空')
+      return
+    }
+
+    if (!editForm.email?.trim()) {
+      toast.error('邮箱不能为空')
       return
     }
 
@@ -501,6 +507,15 @@ export default function StudentTable({
                 name="email"
                 value={editForm.email ?? ''}
                 onChange={handleEditChange}
+                onBlur={() => {
+                  const val = (editForm.email ?? '').trim()
+                  if (!val) return
+                  const { email, fixed } = normalizeEmailInput(val)
+                  if (fixed) {
+                    setEditForm(prev => ({ ...prev, email }))
+                    toast.info(`邮箱后缀已规范为 ${EMAIL_SUFFIX}`)
+                  }
+                }}
                 className="w-full px-2.5 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 placeholder="邮箱地址"
               />
@@ -614,13 +629,13 @@ export default function StudentTable({
             {/* 信息字段 */}
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: '邮箱', value: viewingStudent.email, icon: '✉️' },
-                { label: '专业', value: viewingStudent.major, icon: '🎓' },
-                { label: '意向主题', value: viewingStudent.interestTopic, icon: '💡' },
-                { label: '录入时间', value: new Date(viewingStudent.createdAt).toLocaleString('zh-CN'), icon: '🕐' },
+                { label: '邮箱', value: viewingStudent.email },
+                { label: '专业', value: viewingStudent.major },
+                { label: '意向主题', value: viewingStudent.interestTopic },
+                { label: '录入时间', value: new Date(viewingStudent.createdAt).toLocaleString('zh-CN') },
               ].map(item => (
                 <div key={item.label} className="bg-slate-50 rounded-xl px-3.5 py-2.5 border border-slate-100/80">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{item.icon} {item.label}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{item.label}</p>
                   <p className="text-xs font-semibold text-slate-800 truncate">{item.value || '未填写'}</p>
                 </div>
               ))}
@@ -628,13 +643,13 @@ export default function StudentTable({
 
             {/* 兴趣方向 */}
             <div className="bg-slate-50 rounded-xl px-3.5 py-2.5 border border-slate-100/80">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">🎯 兴趣方向</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">兴趣方向</p>
               {viewingStudent.interestDirection
                 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {viewingStudent.interestDirection.split(',').filter(Boolean).map((tag, i) => (
                       <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200/50">
-                        {tag.trim() === '项目' ? '🚀' : '🔬'} {tag.trim()}
+                        {tag.trim()}
                       </span>
                     ))}
                   </div>
