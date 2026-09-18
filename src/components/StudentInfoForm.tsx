@@ -29,6 +29,8 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
   const [formData, setFormData] = useState<StudentInfo>(emptyForm)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
+  // 学生模式：提交前先弹说明弹窗（硬性信息不入库），确认后再弹原确认弹窗
+  const [showNoticeModal, setShowNoticeModal] = useState(false)
 
   // 识别结果变化时同步表单（渲染期调整，避免 effect 内 setState）
   const [prevInitialData, setPrevInitialData] = useState<StudentInfo | null>(initialData)
@@ -110,7 +112,12 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
       return
     }
 
-    setShowConfirmModal(true)
+    // 学生模式：先弹说明弹窗，确认后再弹原确认弹窗；管理员直进确认弹窗
+    if (lockIdentity) {
+      setShowNoticeModal(true)
+    } else {
+      setShowConfirmModal(true)
+    }
   }
 
   const handleConfirmSubmit = () => {
@@ -133,6 +140,10 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
     { label: '兴趣方向', value: formData.interestDirection },
     { label: '意向主题', value: formData.interestTopic },
   ]
+  // 学生模式确认弹窗只列实际入库的两项，避免误导
+  const visibleSummaryItems = lockIdentity
+    ? summaryItems.filter((item) => item.label === '兴趣方向' || item.label === '意向主题')
+    : summaryItems
 
   return (
     <>
@@ -392,6 +403,26 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
       </form>
 
       <Modal
+        isOpen={showNoticeModal}
+        onClose={() => setShowNoticeModal(false)}
+        onConfirm={() => { setShowNoticeModal(false); setShowConfirmModal(true); }}
+        title="提交说明"
+        confirmText="我知道了，继续提交"
+        cancelText="返回修改"
+      >
+        <div className="space-y-3">
+          <p className="text-slate-600 font-medium text-sm leading-relaxed">
+            本次提交<span className="font-bold text-indigo-700">仅更新「未来兴趣方向」和「意向参与主题」</span>。
+          </p>
+          <p className="text-slate-600 font-medium text-sm leading-relaxed">
+            学号、姓名、身份角色、邮箱、专业等硬性信息由管理员维护，
+            表单中显示的识别结果<span className="font-bold text-slate-900">仅供核对，不会入库</span>；
+            如有误请联系管理员更正。
+          </p>
+        </div>
+      </Modal>
+
+      <Modal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmSubmit}
@@ -406,10 +437,12 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
             </div>
           </div>
           <p className="text-slate-600 font-medium text-center text-sm">
-            请最后核对一次以下信息，提交后将存入数据库：
+            {lockIdentity
+              ? '请核对以下兴趣信息，提交后将更新本人档案：'
+              : '请最后核对一次以下信息，提交后将存入数据库：'}
           </p>
           <div className="grid gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100/50 shadow-inner">
-            {summaryItems.map((item) => (
+            {visibleSummaryItems.map((item) => (
               <div key={item.label} className="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0 last:pb-0 first:pt-0">
                 <span className="text-xs text-slate-500 font-bold tracking-wide uppercase">{item.label}</span>
                 <span className="text-xs text-slate-900 font-semibold bg-white px-2 py-0.5 rounded-md shadow-sm border border-slate-100">

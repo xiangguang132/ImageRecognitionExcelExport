@@ -12,19 +12,27 @@ export const POST = withAuth(async (request) => {
     }
 
     // 服务端校验：只接受常见录音格式，大小上限 10MB（前端校验可被绕过）
-    const ALLOWED_AUDIO_TYPES = ['audio/webm', 'audio/mp4', 'audio/x-m4a', 'audio/mpeg', 'audio/wav', 'audio/ogg']
-    if (!ALLOWED_AUDIO_TYPES.includes(file.type)) {
+    // 注意：浏览器 MediaRecorder 传来的 type 常带参数（如 audio/webM;codecs=opus），
+    // 须先取分号前的主类型并小写归一化，否则严格全等会误杀正常录音
+    const ALLOWED_AUDIO_TYPES = [
+      'audio/webm', 'audio/mp4', 'audio/m4a', 'audio/x-m4a',
+      'audio/mpeg', 'audio/mp3', 'audio/x-mp3',
+      'audio/wav', 'audio/x-wav', 'audio/wave', 'audio/vnd.wave',
+      'audio/ogg', 'audio/aac', 'audio/x-aac', 'audio/flac', 'audio/x-flac'
+    ]
+    const baseType = file.type.split(';')[0].trim().toLowerCase()
+    if (!ALLOWED_AUDIO_TYPES.includes(baseType)) {
       return NextResponse.json({ error: '仅支持 WebM / M4A / MP3 / WAV / OGG 音频' }, { status: 400 })
     }
     if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json({ error: '音频过大，请上传 10MB 以内的音频' }, { status: 400 })
     }
 
-    // 将音频转为 base64
+    // 将音频转为 base64（data URI 用归一化后的主类型，不带 codecs 参数）
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
     const base64Audio = buffer.toString('base64')
-    const mimeType = file.type || 'audio/webm'
+    const mimeType = baseType || 'audio/webm'
 
     console.log('[API] ===== 收到语音识别请求 =====')
     console.log('[API] 文件:', file.name, '|', (file.size / 1024).toFixed(1) + 'KB', '| 类型:', mimeType)
@@ -37,14 +45,20 @@ export const POST = withAuth(async (request) => {
       )
     }
 
-    // 音频格式映射（format 须与实际音频数据格式一致）
+    // 音频格式映射（format 须与实际音频数据格式一致，mimeType 已归一化）
     let audioFormat: string
     if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
       audioFormat = 'mp4'
-    } else if (mimeType.includes('wav')) {
+    } else if (mimeType.includes('wav') || mimeType.includes('wave')) {
       audioFormat = 'wav'
     } else if (mimeType.includes('ogg')) {
       audioFormat = 'ogg'
+    } else if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
+      audioFormat = 'mp3'
+    } else if (mimeType.includes('aac')) {
+      audioFormat = 'aac'
+    } else if (mimeType.includes('flac')) {
+      audioFormat = 'flac'
     } else {
       // 浏览器默认录音格式 webm/opus
       audioFormat = 'webm'
