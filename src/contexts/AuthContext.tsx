@@ -14,13 +14,23 @@ export interface AuthUser {
   email: string
   name: string
   role: string
+  studentId?: string | null
+  mustChangePassword?: number
+}
+
+interface LoginResult {
+  error?: string
+  mustChangePassword?: number
 }
 
 interface AuthContextType {
   user: AuthUser | null
   token: string | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<{ error?: string }>
+  /** 学生登录：学号 + 密码 → POST /api/auth/login */
+  loginStudent: (studentId: string, password: string) => Promise<LoginResult>
+  /** 管理员登录：邮箱 + 密码 → POST /api/auth/admin-login */
+  loginAdmin: (email: string, password: string) => Promise<LoginResult>
   logout: () => void
   authFetch: (url: string, options?: RequestInit) => Promise<Response>
   refreshUser: () => Promise<void>
@@ -52,13 +62,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
+  const doLogin = useCallback(async (url: string, body: Record<string, string>) => {
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(body)
       })
 
       const data = await res.json()
@@ -71,11 +81,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 不再写入 localStorage。刷新页面后靠 Cookie 会话恢复。
       setToken(data.token ?? null)
       setUser(data.user)
-      return {}
+      return { mustChangePassword: data.user?.mustChangePassword ?? 0 }
     } catch {
       return { error: '网络错误，请重试' }
     }
   }, [])
+
+  const loginStudent = useCallback(
+    (studentId: string, password: string) => doLogin('/api/auth/login', { studentId, password }),
+    [doLogin]
+  )
+
+  const loginAdmin = useCallback(
+    (email: string, password: string) => doLogin('/api/auth/admin-login', { email, password }),
+    [doLogin]
+  )
 
   const logout = useCallback(() => {
     // 通知服务端清除 httpOnly Cookie（失败也继续清理本地状态）
@@ -111,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token])
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout, authFetch, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, loginStudent, loginAdmin, logout, authFetch, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

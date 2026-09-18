@@ -32,10 +32,12 @@ export default function Home() {
 
   const isAdmin = user?.role === 'admin'
 
-  // 未登录跳转登录页
+  // 未登录跳转登录页；初始密码未改的学生强制去改密页
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace('/login')
+    } else if (!authLoading && user && user.mustChangePassword === 1) {
+      router.replace('/change-password')
     }
   }, [authLoading, user, router])
 

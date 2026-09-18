@@ -35,6 +35,22 @@ export interface AuthUser {
   email: string
   name: string
   role: string
+  mustChangePassword?: number
+}
+
+/**
+ * 虚拟管理员：唯一管理员，仅由 .env 配置，不在 users 表中落盘。
+ * 约定 id = 0，role = "admin"。
+ */
+export function getEnvAdmin(): AuthUser | null {
+  const email = process.env.ADMIN_EMAIL?.toLowerCase().trim()
+  const name = process.env.ADMIN_NAME?.trim() || '系统管理员'
+  if (!email) return null
+  return { id: 0, email, name, role: 'admin', mustChangePassword: 0 }
+}
+
+export function getEnvAdminEmail(): string {
+  return process.env.ADMIN_EMAIL?.toLowerCase().trim() || 'admin@system.local'
 }
 
 /**
@@ -120,10 +136,19 @@ export async function getCurrentUser(request: Request): Promise<AuthUser | null>
     return null
   }
 
+  // 虚拟管理员（id = 0）：不查库，直接用 .env 构造，并校验邮箱一致防伪造
+  if (payload.id === 0) {
+    const admin = getEnvAdmin()
+    if (!admin || payload.email.toLowerCase().trim() !== admin.email || payload.role !== 'admin') {
+      return null
+    }
+    return admin
+  }
+
   // 从数据库获取最新用户信息（确保角色未被篡改、账号未被删除）
   const user = await prisma.user.findFirst({
     where: { id: payload.id, isDel: 0 },
-    select: { id: true, email: true, name: true, role: true }
+    select: { id: true, email: true, name: true, role: true, mustChangePassword: true }
   })
 
   return user as AuthUser | null

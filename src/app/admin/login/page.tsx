@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from '@/components/ui/Toast'
 
-export default function LoginPage() {
-  const [studentId, setStudentId] = useState('')
+export default function AdminLoginPage() {
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { loginStudent, user, isLoading } = useAuth()
+  const { loginAdmin, user, isLoading } = useAuth()
   const router = useRouter()
 
-  // 已登录则跳转首页
+  // 已登录管理员直接进首页；已登录学生回首页（无权停留在此）
   useEffect(() => {
     if (!isLoading && user) {
       router.replace('/')
@@ -25,8 +25,8 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
 
-    if (!studentId.trim()) {
-      setError('请输入学号')
+    if (!email.trim()) {
+      setError('请输入邮箱')
       return
     }
     if (!password) {
@@ -35,15 +35,12 @@ export default function LoginPage() {
     }
 
     setIsSubmitting(true)
-    const result = await loginStudent(studentId.trim(), password)
+    const result = await loginAdmin(email.trim(), password)
     setIsSubmitting(false)
 
     if (result.error) {
       setError(result.error)
       toast.error(result.error)
-    } else if (result.mustChangePassword === 1) {
-      toast.success('请先修改初始密码')
-      router.replace('/change-password')
     } else {
       toast.success('登录成功，欢迎回来')
       router.replace('/')
@@ -63,37 +60,37 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       {/* 背景装饰 */}
       <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-50/50 blur-[100px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-50/50 blur-[100px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-amber-50/60 blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-orange-50/60 blur-[100px]" />
       </div>
 
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-xl shadow-indigo-500/30 mb-4">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-xl shadow-amber-500/30 mb-4">
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 012-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             学生证识别系统
           </h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Student ID Recognition System · 学生登录
-            </p>
+          <p className="text-xs text-slate-500 mt-1">
+            Student ID Recognition System · 管理员登录
+          </p>
         </div>
 
         {/* 登录表单 */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/50 border border-white p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-            <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">学生登录</h2>
-              <p className="text-xs text-slate-500">请使用学号和密码登录</p>
+              <h2 className="text-lg font-bold text-slate-900">管理员登录</h2>
+              <p className="text-xs text-slate-500">请使用管理员邮箱和密码登录</p>
             </div>
           </div>
 
@@ -105,17 +102,17 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* 学号 */}
+            {/* 邮箱 */}
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700 tracking-wide uppercase">
-                学号
+                邮箱
               </label>
               <input
-                type="text"
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm uppercase"
-                placeholder="请输入学号"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-amber-500/10 focus:border-amber-500 transition-all shadow-sm"
+                placeholder="admin@system.local"
                 autoFocus
               />
             </div>
@@ -130,7 +127,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 pr-10 py-2.5 text-sm bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
+                  className="w-full px-3 pr-10 py-2.5 text-sm bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-amber-500/10 focus:border-amber-500 transition-all shadow-sm"
                   placeholder="请输入密码"
                 />
                 <button
@@ -160,24 +157,9 @@ export default function LoginPage() {
               className={`w-full py-3 rounded-xl font-bold text-white text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2
                 ${isSubmitting
                   ? 'bg-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 hover:from-indigo-700 hover:via-blue-700 hover:to-indigo-700 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/30 active:translate-y-0 shadow-lg shadow-indigo-500/25'}`}
+                  : 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-600 hover:from-amber-700 hover:via-orange-700 hover:to-amber-700 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-amber-500/30 active:translate-y-0 shadow-lg shadow-amber-500/25'}`}
             >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>登录中...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                  </svg>
-                  <span>登 录</span>
-                </>
-              )}
+              {isSubmitting ? '登录中...' : '登 录'}
             </button>
           </form>
         </div>
@@ -187,8 +169,8 @@ export default function LoginPage() {
           © {new Date().getFullYear()} Student ID Recognition System
         </p>
         <p className="text-center text-xs mt-2">
-          <a href="/admin/login" className="text-indigo-600 hover:text-indigo-800 font-medium">
-            管理员登录 →
+          <a href="/login" className="text-indigo-600 hover:text-indigo-800 font-medium">
+            ← 返回学生登录
           </a>
         </p>
       </div>

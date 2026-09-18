@@ -1,4 +1,11 @@
-// 学生证识别系统 - 数据库模型
+// 学生证识别系统 - 数据库模型（单表：账号 + 学生档案一体）
+//
+// 约定：
+// - 管理员是 .env 配置的虚拟账号（ADMIN_EMAIL/ADMIN_PASSWORD/ADMIN_NAME），
+//   不在 users 表中落盘，登录与鉴权时在内存中构造（id = 0, role = "admin"）。
+// - users 表中实际只存学生账号（role 恒为 "user"）。
+// - 管理员导入/录入学生时默认密码 123456（bcrypt 入库），mustChangePassword = 1，
+//   学生首次登录必须强制改密。
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,30 +16,20 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  password  String                            // bcrypt hash
-  role      String   @default("user")         // "admin" | "user"
-  isDel     Int      @default(0) @map("is_del")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                  Int      @id @default(autoincrement())
+  email               String   @unique
+  name                String
+  password            String                            // bcrypt hash
+  role                String   @default("user")         // 权限：DB 中恒为 "user"，"admin" 只存在于虚拟账号
+  studentId           String?  @unique @map("student_id") // 学号
+  major               String?                           // 专业
+  identity            String?                           // 在校身份：student（学生）/ teacher（教师），由原 students.role 迁移
+  interestDirection   String?  @map("interest_direction") // 未来兴趣方向（项目/研究）
+  interestTopic       String?  @map("interest_topic")    // 意向参与主题
+  mustChangePassword  Int      @default(1) @map("must_change_password") // 1=下次登录强制改密
+  isDel               Int      @default(0) @map("is_del")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   @@map("users")
-}
-
-model Student {
-  id                 Int      @id @default(autoincrement())
-  studentId          String?  @map("student_id")       // 学号
-  name               String?                           // 姓名
-  email              String?                           // 邮箱
-  major              String?                           // 专业
-  role               String?                           // 角色
-  interestDirection  String?  @map("interest_direction") // 未来兴趣方向（项目/研究）
-  interestTopic      String?  @map("interest_topic")    // 意向参与主题
-  isDel              Int      @default(0) @map("is_del") // 软删除标记：0-未删除 1-已删除
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
-
-  @@map("students")
 }

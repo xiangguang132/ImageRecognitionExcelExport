@@ -6,9 +6,9 @@ import ExcelJS from 'exceljs'
 // GET - 导出 Excel（仅管理员）
 export const GET = withAdmin(async () => {
   try {
-    // 获取所有学生数据
-    const students = await prisma.student.findMany({
-      where: { isDel: 0 },
+    // 获取所有学生数据（单表 users，role 恒为 user）
+    const students = await prisma.user.findMany({
+      where: { isDel: 0, role: 'user' },
       orderBy: {
         createdAt: 'desc'
       }
@@ -50,7 +50,7 @@ export const GET = withAdmin(async () => {
         name: student.name || '',
         email: student.email || '',
         major: student.major || '',
-        role: student.role || '',
+        role: student.identity || '',
         interestDirection: student.interestDirection || '',
         interestTopic: student.interestTopic || ''
       })

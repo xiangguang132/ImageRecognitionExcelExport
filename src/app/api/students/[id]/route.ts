@@ -3,6 +3,30 @@ import { prisma } from '@/lib/prisma'
 import { validateStudentInput } from '@/lib/validation'
 import { withAdminParams } from '@/lib/auth-middleware'
 
+// 单表说明：见 ../route.ts。密码只能经 /api/auth/change-password 修改，
+// 本接口不接受 password / 权限 role 字段。
+
+function toStudentRow(u: {
+  id: number; studentId: string | null; name: string | null; email: string | null;
+  major: string | null; identity: string | null; interestDirection: string | null;
+  interestTopic: string | null; mustChangePassword: number; createdAt: Date; updatedAt: Date
+}) {
+  return {
+    id: u.id,
+    studentId: u.studentId,
+    name: u.name,
+    email: u.email,
+    major: u.major,
+    role: u.identity,
+    identity: u.identity,
+    interestDirection: u.interestDirection,
+    interestTopic: u.interestTopic,
+    mustChangePassword: u.mustChangePassword,
+    createdAt: u.createdAt,
+    updatedAt: u.updatedAt
+  }
+}
+
 // PUT - 更新学生信息（仅管理员）
 export const PUT = withAdminParams(async (request, context) => {
   try {
@@ -17,10 +41,14 @@ export const PUT = withAdminParams(async (request, context) => {
     }
 
     const body = await request.json()
-    const { studentId: newStudentId, name, email, major, role, interestDirection, interestTopic } = body
+    const { studentId: newStudentId, name, email, major, interestDirection, interestTopic } = body
+    // 在校身份：兼容新旧字段名（identity / role）；权限 role 与 password 不在此修改
+    const identity = typeof body.identity === 'string' && body.identity
+      ? body.identity
+      : (typeof body.role === 'string' ? body.role : undefined)
 
     // 写入层统一校验（格式 + 敏感内容），拦截后不更新
-    const validation = validateStudentInput(body)
+    const validation = validateStudentInput({ ...body, role: identity ?? body.role })
     if (!validation.ok) {
       return NextResponse.json(
         { error: validation.errors[0], errors: validation.errors, fieldErrors: validation.fieldErrors },
@@ -28,8 +56,8 @@ export const PUT = withAdminParams(async (request, context) => {
       )
     }
 
-    const updated = await prisma.student.findFirst({
-      where: { id: studentId, isDel: 0 }
+    const updated = await prisma.user.findFirst({
+      where: { id: studentId, isDel: 0, role: 'user' }
     })
 
     if (!updated) {
@@ -42,7 +70,7 @@ export const PUT = withAdminParams(async (request, context) => {
     // 学号改动时判重（与 POST 同一规则：未删除记录中学号已存在则拒绝）
     const normalizedNewId = typeof newStudentId === 'string' ? newStudentId.trim() : ''
     if (normalizedNewId && normalizedNewId !== updated.studentId) {
-      const conflict = await prisma.student.findFirst({
+      const conflict = await prisma.user.findFirst({
         where: { studentId: normalizedNewId, isDel: 0 }
       })
       if (conflict) {
@@ -53,20 +81,32 @@ export const PUT = withAdminParams(async (request, context) => {
       }
     }
 
-    const result = await prisma.student.update({
+    // 邮箱改动时判重（邮箱为登录键）
+    const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : ''
+    if (normalizedEmail && normalizedEmail !== updated.email) {
+      const conflict = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+      if (conflict) {
+        return NextResponse.json(
+          { error: '该邮箱已存在' },
+          { status: 409 }
+        )
+      }
+    }
+
+    const result = await prisma.user.update({
       where: { id: studentId },
       data: {
         studentId: normalizedNewId || undefined,
         name: name ?? undefined,
-        email: email ?? undefined,
+        email: normalizedEmail || undefined,
         major: major ?? undefined,
-        role: role ?? undefined,
+        identity: identity ?? undefined,
         interestDirection: interestDirection ?? undefined,
         interestTopic: interestTopic ?? undefined,
       }
     })
 
-    return NextResponse.json(result)
+    return NextResponse.json(toStudentRow(result))
   } catch (error: unknown) {
     console.error('更新学生信息失败:', error)
     if ((error as { code?: string }).code === 'P2025') {
@@ -82,7 +122,7 @@ export const PUT = withAdminParams(async (request, context) => {
   }
 })
 
-// DELETE - 删除学生信息（仅管理员）
+// DELETE - 删除学生信息（仅管理员，软删除；其登录账号同步失效）
 export const DELETE = withAdminParams(async (request, context) => {
   try {
     const { id } = await context.params
@@ -95,8 +135,8 @@ export const DELETE = withAdminParams(async (request, context) => {
       )
     }
 
-    const existing = await prisma.student.findFirst({
-      where: { id: studentId, isDel: 0 }
+    const existing = await prisma.user.findFirst({
+      where: { id: studentId, isDel: 0, role: 'user' }
     })
 
     if (!existing) {
@@ -106,7 +146,7 @@ export const DELETE = withAdminParams(async (request, context) => {
       )
     }
 
-    await prisma.student.update({
+    await prisma.user.update({
       where: { id: studentId },
       data: { isDel: 1 }
     })

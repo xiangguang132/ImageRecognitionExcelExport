@@ -25,9 +25,9 @@ export const PUT = withAdminParams(async (request, context, user) => {
       return NextResponse.json({ error: '用户不存在' }, { status: 404 })
     }
 
-    // 禁止把自己从管理员降级，避免把最后一个管理员锁在系统外
-    if (userId === user.id && existing.role === 'admin' && role && role !== 'admin') {
-      return NextResponse.json({ error: '不能将自己的管理员角色降级' }, { status: 400 })
+    // 单表后管理员为 .env 虚拟账号：DB 中只存学生，禁止任何提权为 admin
+    if (role && role === 'admin') {
+      return NextResponse.json({ error: '管理员唯一，仅可使用 .env 中配置的账号' }, { status: 400 })
     }
 
     // 如果修改了邮箱，检查是否与其他用户冲突
@@ -49,7 +49,7 @@ export const PUT = withAdminParams(async (request, context, user) => {
 
     if (email) updateData.email = email.toLowerCase().trim()
     if (name) updateData.name = name.trim()
-    if (role) updateData.role = role === 'admin' ? 'admin' : 'user'
+    if (role) updateData.role = 'user'
     if (password) {
       updateData.password = await hashPassword(password)
     }

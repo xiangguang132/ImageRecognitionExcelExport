@@ -45,7 +45,7 @@ export default function AdminUsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!authLoading && !user) router.replace('/login')
+    if (!authLoading && !user) router.replace('/admin/login')
     if (!authLoading && user && user.role !== 'admin') router.replace('/')
   }, [authLoading, user, router])
 
@@ -59,7 +59,7 @@ export default function AdminUsersPage() {
         setCurrentPage(page)
       } else if (response.status === 401) {
         logout()
-        router.replace('/login')
+        router.replace('/admin/login')
       }
     } catch (error) {
       console.error('获取用户列表失败:', error)
@@ -82,7 +82,7 @@ export default function AdminUsersPage() {
           setCurrentPage(1)
         } else if (response.status === 401) {
           logout()
-          router.replace('/login')
+          router.replace('/admin/login')
         }
       })
       .catch((error) => console.error('获取用户列表失败:', error))

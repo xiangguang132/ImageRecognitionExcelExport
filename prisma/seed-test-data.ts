@@ -7,51 +7,40 @@ const firstNames = ['陳偉', '黃麗', '張志', '李雅', '王浩', '劉敏', 
 const majors = ['計算機科學', '工商管理', '土木工程', '葡萄牙語研究', '會計學', '心理學', '金融學', '法律']
 const topics = ['基於大模型的代碼助手研究', '智慧校園考勤系統', '澳門文旅推薦算法', '低功耗物聯網節點設計', '粵語語音識別優化']
 
-async function main() {
-  // ---- 测试用户 ----
-  const users = [
-    { email: 'admin@test.local', name: '測試管理員', password: 'admin123', role: 'admin' },
-    { email: 'user1@test.local', name: '測試用戶一', password: 'user1234', role: 'user' },
-    { email: 'user2@test.local', name: '測試用戶二', password: 'user1234', role: 'user' }
-  ]
-  for (const u of users) {
-    const existing = await prisma.user.findUnique({ where: { email: u.email } })
-    if (existing) {
-      console.log(`[test-data] 用户已存在: ${u.email}`)
-      continue
-    }
-    await prisma.user.create({
-      data: { ...u, password: await bcrypt.hash(u.password, 10) }
-    })
-    console.log(`[test-data] 用户创建成功: ${u.email} / ${u.password}`)
-  }
+// 单表后：测试数据即学生账号，默认密码 123456，mustChangePassword = 1。
+// 管理员为 .env 虚拟账号，不在此创建。
+const DEFAULT_PASSWORD = '123456'
 
-  // ---- 测试学生（25 条，覆盖分页 5/10/15）----
+async function main() {
+  const hash = await bcrypt.hash(DEFAULT_PASSWORD, 10)
+
+  // ---- 测试学生账号（25 条，覆盖分页 5/10/15）----
   let created = 0
   for (let i = 0; i < 25; i++) {
     const studentId = `TC2024${String(i + 1).padStart(3, '0')}`
-    const existing = await prisma.student.findFirst({ where: { studentId, isDel: 0 } })
+    const email = `${studentId.toLowerCase()}@connect.um.edu.mo`
+    const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) continue
-    await prisma.student.create({
+    await prisma.user.create({
       data: {
         studentId,
         name: `${firstNames[i]}${i >= firstNames.length ? i : ''}`,
-        email: `${studentId.toLowerCase()}@connect.um.edu.mo`,
+        email,
+        password: hash,
+        role: 'user',
         major: majors[i % majors.length],
-        role: i % 5 === 4 ? 'teacher' : 'student',
+        identity: i % 5 === 4 ? 'teacher' : 'student',
         interestDirection: i % 3 === 0 ? '項目,研究' : i % 3 === 1 ? '項目' : '研究',
-        interestTopic: topics[i % topics.length]
+        interestTopic: topics[i % topics.length],
+        mustChangePassword: 1
       }
     })
     created++
   }
-  console.log(`[test-data] 学生创建 ${created} 条`)
+  console.log(`[test-data] 学生账号创建 ${created} 条（默认密码 ${DEFAULT_PASSWORD}，首次登录强制改密）`)
 
-  const [userCount, studentCount] = await Promise.all([
-    prisma.user.count({ where: { isDel: 0 } }),
-    prisma.student.count({ where: { isDel: 0 } })
-  ])
-  console.log(`[test-data] 当前总数: 用户 ${userCount}, 学生 ${studentCount}`)
+  const userCount = await prisma.user.count({ where: { isDel: 0 } })
+  console.log(`[test-data] 当前总数: 用户 ${userCount}`)
 }
 
 main()

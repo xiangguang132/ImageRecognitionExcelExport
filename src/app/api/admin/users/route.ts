@@ -46,7 +46,7 @@ export const GET = withAdmin(async (request) => {
 export const POST = withAdmin(async (request) => {
   try {
     const body = await request.json()
-    const { email, name, password, role } = body
+    const { email, name, password, studentId } = body
 
     if (!email || !name || !password) {
       return NextResponse.json(
@@ -73,17 +73,43 @@ export const POST = withAdmin(async (request) => {
       )
     }
 
+    // 学号可选；填写后即作为该账号的学生登录凭证，需唯一
+    const normalizedSid = typeof studentId === 'string' && studentId.trim()
+      ? studentId.trim().toUpperCase()
+      : null
+    if (normalizedSid) {
+      if (!/^[A-Za-z0-9]{4,20}$/.test(normalizedSid)) {
+        return NextResponse.json(
+          { error: '学号格式不正确（仅允许字母和数字，长度为 4~20 位）' },
+          { status: 400 }
+        )
+      }
+      const sidConflict = await prisma.user.findFirst({
+        where: { studentId: normalizedSid, isDel: 0 }
+      })
+      if (sidConflict) {
+        return NextResponse.json(
+          { error: '该学号已存在' },
+          { status: 409 }
+        )
+      }
+    }
+
     const hashedPassword = await hashPassword(password)
-    const userRole = role === 'admin' ? 'admin' : 'user'
+    // 单表后：此处创建的即学生账号；首登强制改密（mustChangePassword = 1）
+    // 未填学号的账号无法通过学生登录入口登录，需后续在学生管理中补录
+    const userRole = 'user'
 
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase().trim(),
         name: name.trim(),
         password: hashedPassword,
-        role: userRole
+        role: userRole,
+        studentId: normalizedSid,
+        mustChangePassword: 1
       },
-      select: { id: true, email: true, name: true, role: true, createdAt: true }
+      select: { id: true, email: true, name: true, role: true, mustChangePassword: true, createdAt: true }
     })
 
     return NextResponse.json(user, { status: 201 })

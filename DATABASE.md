@@ -1,41 +1,44 @@
-# 数据库建表语句
-
-## 创建数据库
-
-```sql
-CREATE DATABASE IF NOT EXISTS student_card DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-## 使用数据库
-
-```sql
-USE student_card;
-```
-
-## 创建学生证信息表
-
-```sql
-CREATE TABLE IF NOT EXISTS students (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  student_id VARCHAR(50) COMMENT '学号（只保留数字和大写字母）',
-  name VARCHAR(100) COMMENT '姓名',
-  email VARCHAR(100) COMMENT '邮箱',
-  major VARCHAR(100) COMMENT '专业',
-  role VARCHAR(50) COMMENT '角色（如 學生/STUDENT）',
-  interest_direction VARCHAR(100) COMMENT '未来兴趣方向（项目/研究，可多选，逗号分隔）',
-  interest_topic VARCHAR(500) COMMENT '意向参与主题',
-  is_del TINYINT NOT NULL DEFAULT 0 COMMENT '软删除标记：0-未删除 1-已删除',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学生证信息表';
-```
+# 数据库说明（SQLite 单表）
 
 ## 连接信息
 
-请修改项目根目录 `.env` 文件中的数据库连接信息：
+`DATABASE_URL="file:./dev.db"`（`.env`），文件位置 `prisma/dev.db`
+（相对 `prisma/` 目录解析）。
 
-```
-DATABASE_URL="mysql://用户名:密码@localhost:3306/student_card"
-```
+## 设计约定
 
-默认配置：用户名 `root`，密码需替换为你实际的 MySQL 密码。
+- **单表 `users`**：学生档案 + 登录账号一体，不再有 `students` 表。
+- **管理员是虚拟账号**：仅由 `.env` 配置
+  （`ADMIN_EMAIL / ADMIN_PASSWORD / ADMIN_NAME`），不在 `users` 表中落盘，
+  登录与鉴权时在内存中构造（`id = 0, role = "admin"`）。
+- **学生账号**：`role` 恒为 `"user"`；在校身份（学生/教师）存 `identity` 列。
+- **登录分离**：学生用**学号**登录（`POST /api/auth/login`，页面 `/login`）；
+  管理员用**邮箱**登录（`POST /api/auth/admin-login`，页面 `/admin/login`）。
+- **默认密码**：管理员导入/录入学生时密码为 `123456`（bcrypt 入库），
+  `must_change_password = 1`，学生首次登录必须强制改密。
+
+## 表结构（`users`）
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| id | INTEGER PK | 自增 |
+| email | TEXT UNIQUE | 邮箱（管理员登录键；学生邮箱仅作联系信息） |
+| student_id | TEXT UNIQUE，可空 | 学号（学生登录键） |
+| name | TEXT | 姓名 |
+| password | TEXT | bcrypt hash |
+| role | TEXT | 权限，DB 中恒为 `user` |
+| major | TEXT，可空 | 专业 |
+| identity | TEXT，可空 | 在校身份：`student` / `teacher` |
+| interest_direction | TEXT，可空 | 未来兴趣方向（项目/研究） |
+| interest_topic | TEXT，可空 | 意向参与主题 |
+| must_change_password | INTEGER | 1=下次登录强制改密 |
+| is_del | INTEGER | 软删除：0-未删除 1-已删除 |
+| created_at / updated_at | DATETIME | 时间戳 |
+
+## 常用命令
+
+```bash
+npx prisma db push        # 同步表结构（SQLite 无 migrate 目录）
+npx prisma db seed        # 环境自检（虚拟管理员就绪 + 清理残留 admin 行）
+npx tsx prisma/seed-test-data.ts  # 生成 25 条测试学生账号（密码 123456）
+```
