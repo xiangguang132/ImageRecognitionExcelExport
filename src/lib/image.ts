@@ -20,7 +20,14 @@ export async function compressImage(
   // 已足够小，直接返回，省一次编解码
   if (file.size <= 300 * 1024) return file
 
-  const bitmap = await createImageBitmap(file)
+  // imageOrientation: 'from-image' 让手机照片按 EXIF 方向解码，
+  // 否则 iPhone 竖拍图压完会横过来。老浏览器不支持该选项时回退默认解码。
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  } catch {
+    bitmap = await createImageBitmap(file)
+  }
   try {
     const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height))
     // 尺寸已达标且本身就是 JPEG，不折腾
