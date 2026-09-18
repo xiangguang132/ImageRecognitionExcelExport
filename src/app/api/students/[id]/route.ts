@@ -41,11 +41,16 @@ export const PUT = withAdminParams(async (request, context) => {
     }
 
     const body = await request.json()
-    const { studentId: newStudentId, name, email, major, interestDirection, interestTopic } = body
+    const { studentId: newStudentId, name: rawName, email, major: rawMajor, interestDirection: rawDirection, interestTopic: rawTopic } = body
     // 在校身份：兼容新旧字段名（identity / role）；权限 role 与 password 不在此修改
     const identity = typeof body.identity === 'string' && body.identity
       ? body.identity
       : (typeof body.role === 'string' ? body.role : undefined)
+    // 文本字段去空格；空字符串视为未提供（保留原值），避免存入脏空格串
+    const name = typeof rawName === 'string' && rawName.trim() ? rawName.trim() : undefined
+    const major = typeof rawMajor === 'string' && rawMajor.trim() ? rawMajor.trim() : undefined
+    const interestDirection = typeof rawDirection === 'string' && rawDirection.trim() ? rawDirection.trim() : undefined
+    const interestTopic = typeof rawTopic === 'string' && rawTopic.trim() ? rawTopic.trim() : undefined
 
     // 写入层统一校验（格式 + 敏感内容），拦截后不更新
     const validation = validateStudentInput({ ...body, role: identity ?? body.role })
@@ -67,8 +72,8 @@ export const PUT = withAdminParams(async (request, context) => {
       )
     }
 
-    // 学号改动时判重（与 POST 同一规则；含已删除记录，避免撞唯一约束 500）
-    const normalizedNewId = typeof newStudentId === 'string' ? newStudentId.trim() : ''
+    // 学号改动时判重（与 POST 同一规则；含已删除记录，避免撞唯一约束 500；统一大写）
+    const normalizedNewId = typeof newStudentId === 'string' ? newStudentId.trim().toUpperCase() : ''
     if (normalizedNewId && normalizedNewId !== updated.studentId) {
       const conflict = await prisma.user.findFirst({
         where: { studentId: normalizedNewId }
@@ -103,12 +108,12 @@ export const PUT = withAdminParams(async (request, context) => {
       where: { id: studentId },
       data: {
         studentId: normalizedNewId || undefined,
-        name: name ?? undefined,
+        name,
         email: normalizedEmail || undefined,
-        major: major ?? undefined,
+        major,
         identity: identity ?? undefined,
-        interestDirection: interestDirection ?? undefined,
-        interestTopic: interestTopic ?? undefined,
+        interestDirection,
+        interestTopic,
       }
     })
 

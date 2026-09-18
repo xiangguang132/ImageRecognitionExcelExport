@@ -96,7 +96,8 @@ export const POST = withAdmin(async (request) => {
     const body = await request.json()
 
     // 必填字段：学号 + 姓名（空对象 / 全空不再入库）
-    const studentId = typeof body.studentId === 'string' ? body.studentId.trim() : ''
+    // 学号统一大写入库（与登录归一化一致，直调接口传小写也不会错开）
+    const studentId = typeof body.studentId === 'string' ? body.studentId.trim().toUpperCase() : ''
     const name = typeof body.name === 'string' ? body.name.trim() : ''
     if (!studentId || !name) {
       return NextResponse.json(
@@ -179,6 +180,12 @@ export const POST = withAdmin(async (request) => {
       )
     }
 
+    // 入库文本统一去空格（判重用的已是去空格值，此处保持一致）
+    const cleanName = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : null
+    const cleanMajor = typeof body.major === 'string' && body.major.trim() ? body.major.trim() : null
+    const cleanDirection = typeof body.interestDirection === 'string' && body.interestDirection.trim() ? body.interestDirection.trim() : null
+    const cleanTopic = typeof body.interestTopic === 'string' && body.interestTopic.trim() ? body.interestTopic.trim() : null
+
     // 同学号已删除记录：复活并用新资料覆盖，密码重置为默认（与新建一致），
     // 避免撞唯一约束导致 500。先于邮箱冲突处理：占用者若正是该行则直接复活。
     // 仅当邮箱为空、或邮箱占用者正是该行时才可复活，否则按邮箱冲突处理
@@ -191,13 +198,13 @@ export const POST = withAdmin(async (request) => {
         const revived = await prisma.user.update({
           where: { id: deletedSid.id },
           data: {
-            name: body.name || null,
+            name: cleanName,
             email: email || null,
             password: await hashPassword(DEFAULT_PASSWORD),
-            major: body.major || null,
+            major: cleanMajor,
             identity: identity || null,
-            interestDirection: body.interestDirection || null,
-            interestTopic: body.interestTopic || null,
+            interestDirection: cleanDirection,
+            interestTopic: cleanTopic,
             mustChangePassword: 1,
             isDel: 0
           }
@@ -219,15 +226,15 @@ export const POST = withAdmin(async (request) => {
 
     const student = await prisma.user.create({
       data: {
-        studentId, // 存去空格后的值，与判重字段一致
-        name: body.name || null,
+        studentId, // 去空格大写后的值，与判重字段一致
+        name: cleanName,
         email: email || null,
         password: await hashPassword(DEFAULT_PASSWORD),
         role: 'user',
-        major: body.major || null,
+        major: cleanMajor,
         identity: identity || null,
-        interestDirection: body.interestDirection || null,
-        interestTopic: body.interestTopic || null,
+        interestDirection: cleanDirection,
+        interestTopic: cleanTopic,
         mustChangePassword: 1
       }
     })
