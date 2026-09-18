@@ -42,6 +42,10 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
       toast.error('图片过大，请上传 30MB 以内的图片')
       return
     }
+    // 原图过大先给预期：即使压完上传很快，千问对细节大图推理也可能要几十秒
+    if (file.size > 5 * 1024 * 1024) {
+      toast.info('上传文件过大，可能会影响识别速度哦，可以尝试语音识别功能哦~')
+    }
     try {
       // 手机原图先压缩（长边 1600px / JPEG 0.85），再预览再上传：
       // 8MB 原图通常压到 300KB 左右，上传和 AI 推理都快一个数量级
