@@ -35,6 +35,34 @@ function getPreferredMimeType(): string {
   return ''
 }
 
+interface SpeechRecognitionInstance extends EventTarget {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null
+  onerror: ((event: { error?: string }) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+  abort: () => void
+}
+
+interface SpeechRecognitionEventLike {
+  resultIndex: number
+  results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean; length: number }>
+}
+
+function getSpeechRecognitionConstructor(): (new () => SpeechRecognitionInstance) | null {
+  if (typeof window === 'undefined') return null
+  const w = window as unknown as Record<string, unknown>
+  const ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition
+  return (ctor as (new () => SpeechRecognitionInstance) | undefined) ?? null
+}
+
+export function isLiveTranscriptionSupported(): boolean {
+  return getSpeechRecognitionConstructor() !== null
+}
+
 /**
  * 录音支持度 hook（SSR 安全：服务端返回 false，水合后返回真实值，无需 effect）
  * 页面入口可用它禁用"语音录入"按钮
@@ -55,6 +83,8 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [liveTranscript, setLiveTranscript] = useState('')
+  const [isLiveTranscribing, setIsLiveTranscribing] = useState(false)
   const supported = useVoiceRecordingSupport()
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -62,9 +92,60 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
   const audioChunksRef = useRef<Blob[]>([])
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
+  const finalTranscriptRef = useRef('')
+
+  // 停止浏览器实时转写（失败静默，录音与后端校准不受影响）
+  const stopLiveTranscription = useCallback(() => {
+    try {
+      recognitionRef.current?.stop()
+    } catch { /* ignore */ }
+    recognitionRef.current = null
+    setIsLiveTranscribing(false)
+  }, [])
+
+  // 开始浏览器实时转写：边说边显示，点发送后仍走后端 qwen 校准提字段
+  const startLiveTranscription = useCallback(() => {
+    const Ctor = getSpeechRecognitionConstructor()
+    if (!Ctor) return
+    try {
+      const recognition = new Ctor()
+      recognition.lang = 'zh-TW'
+      recognition.continuous = true
+      recognition.interimResults = true
+      recognition.onresult = (event: SpeechRecognitionEventLike) => {
+        let interim = ''
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i]
+          const transcript = result[0]?.transcript ?? ''
+          if (result.isFinal) {
+            finalTranscriptRef.current += transcript
+          } else {
+            interim += transcript
+          }
+        }
+        setLiveTranscript(finalTranscriptRef.current + interim)
+      }
+      recognition.onerror = () => {
+        // 实时转写失败不阻断录音，只停掉前端显示
+        setIsLiveTranscribing(false)
+      }
+      recognition.onend = () => {
+        setIsLiveTranscribing(false)
+      }
+      finalTranscriptRef.current = ''
+      setLiveTranscript('')
+      recognitionRef.current = recognition
+      recognition.start()
+      setIsLiveTranscribing(true)
+    } catch {
+      setIsLiveTranscribing(false)
+    }
+  }, [])
 
   // 清理资源
   const cleanup = useCallback(() => {
+    stopLiveTranscription()
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null
@@ -91,6 +172,9 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
   // 重置录音状态（所有关闭弹窗的路径统一走这里，不再用 effect 监听 isOpen）
   const resetState = useCallback(() => {
     cleanup()
+    finalTranscriptRef.current = ''
+    setLiveTranscript('')
+    setIsLiveTranscribing(false)
     setState('idle')
     setAudioBlob(null)
     setAudioUrl(null)
@@ -158,6 +242,8 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
       recorder.start(100) // 每 100ms 触发一次 ondataavailable
       setState('recording')
       setElapsedSeconds(0)
+      // 与录音并行启动浏览器实时转写（不支持则静默跳过）
+      startLiveTranscription()
 
       // 启动计时器
       timerRef.current = setInterval(() => {
@@ -187,6 +273,7 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
 
   // 停止录音
   const stopRecording = () => {
+    stopLiveTranscription()
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null
@@ -199,6 +286,9 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
   // 重新录音
   const retryRecording = () => {
     cleanup()
+    finalTranscriptRef.current = ''
+    setLiveTranscript('')
+    setIsLiveTranscribing(false)
     setState('idle')
     setAudioBlob(null)
     setAudioUrl(null)
@@ -342,6 +432,19 @@ export default function VoiceRecorder({ isOpen, onClose, onRecordingComplete }: 
               </>
             )}
           </div>
+
+          {/* 实时转写文本：边说边显示，仅供核对；最终字段仍以后端 qwen 校准为准 */}
+          {(state === 'recording' || state === 'recorded') && (
+            <div className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-left">
+              <p className="text-[11px] font-bold text-slate-500 mb-1 flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${isLiveTranscribing ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                实时转写{isLiveTranscribing ? '中' : liveTranscript ? '' : '（当前浏览器不支持，仅后端识别）'}
+              </p>
+              <p className="text-sm text-slate-700 leading-relaxed min-h-[2.5rem] whitespace-pre-wrap">
+                {liveTranscript || (state === 'recording' ? '请开始说话…' : '未捕捉到语音，可直接发送由后端识别')}
+              </p>
+            </div>
+          )}
 
           {/* 错误信息 */}
           {error && (
