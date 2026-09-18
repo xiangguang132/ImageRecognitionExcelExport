@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import sharp from 'sharp'
 import { withAuth } from '@/lib/auth-middleware'
 
 // POST - 图片识别（已登录用户均可）
@@ -20,11 +21,44 @@ export const POST = withAuth(async (request) => {
       return NextResponse.json({ error: '图片过大，请上传 10MB 以内的图片' }, { status: 400 })
     }
 
-    // 将图片转为 base64
+    // 将图片转为 base64（先过服务端二次压缩兜底）
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const base64Image = buffer.toString('base64')
-    const mimeType = file.type || 'image/jpeg'
+
+    // 服务端二次压缩：前端正常已压过（小图秒过无开销）；
+    // 直调 API 或前端压缩失败漏网的大图在这里收敛，保证千问侧输入可控。
+    // 只处理 sharp 可读的照片格式；BMP/GIF 原样透传；sharp 异常一律回退原图，
+    // 输出非空才采用——数据完整性优先，宁可慢不可坏。
+    const SHARP_INPUT = ['image/jpeg', 'image/png', 'image/webp']
+    let outBuffer = buffer
+    let outMime = file.type || 'image/jpeg'
+    if (SHARP_INPUT.includes(file.type)) {
+      try {
+        const meta = await sharp(buffer).metadata()
+        const needShrink =
+          (meta.width && meta.width > 1600) ||
+          (meta.height && meta.height > 1600) ||
+          buffer.length > 1024 * 1024
+        if (needShrink) {
+          const shrunk = await sharp(buffer)
+            .rotate() // 按 EXIF 自动摆正
+            .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 80 })
+            .toBuffer()
+          if (shrunk && shrunk.length > 0) {
+            console.log(`[API] 服务端二次压缩: ${(buffer.length / 1024).toFixed(0)}KB → ${(shrunk.length / 1024).toFixed(0)}KB`)
+            outBuffer = shrunk
+            outMime = 'image/jpeg'
+          } else {
+            console.warn('[API] sharp 输出为空，回退原图')
+          }
+        }
+      } catch (e) {
+        console.warn('[API] sharp 压缩失败，回退原图:', e)
+      }
+    }
+    const base64Image = outBuffer.toString('base64')
+    const mimeType = outMime
 
     console.log('[API] ===== 收到识别请求 =====')
     console.log('[API] 文件:', file.name, '|', (file.size / 1024).toFixed(1) + 'KB')

@@ -31,10 +31,21 @@ export async function recognizeVoiceWithAI(
   console.log('[前端] 发送请求到 /api/voice-recognize ...')
   const startTime = Date.now()
 
-  const response = await fetcher(api('/api/voice-recognize'), {
-    method: 'POST',
-    body: formData
-  })
+  // 前端 120 秒封顶（后端语音限 90 秒，留 30 秒给上传）；
+  // 超时停转圈给明确提示，不让用户无限等
+  let response: Response
+  try {
+    response = await fetcher(api('/api/voice-recognize'), {
+      method: 'POST',
+      body: formData,
+      signal: AbortSignal.timeout(120_000)
+    })
+  } catch (e) {
+    if (e instanceof Error && e.name === 'TimeoutError') {
+      throw new Error('语音识别超时（120秒），请缩短录音后重试')
+    }
+    throw new Error('网络错误，请重试')
+  }
 
   const elapsed = Date.now() - startTime
   console.log('[前端] 语音识别 API 响应耗时:', elapsed, 'ms')

@@ -101,10 +101,21 @@ export async function recognizeWithAI(
   console.log('[前端] 发送请求到 /api/recognize ...')
   const startTime = Date.now()
 
-  const response = await fetcher(api('/api/recognize'), {
-    method: 'POST',
-    body: formData
-  })
+  // 前端 90 秒封顶：后端千问限 60 秒，留 30 秒给上传；
+  // 超时直接停转圈给明确提示，不让用户无限等。
+  let response: Response
+  try {
+    response = await fetcher(api('/api/recognize'), {
+      method: 'POST',
+      body: formData,
+      signal: AbortSignal.timeout(90_000)
+    })
+  } catch (e) {
+    if (e instanceof Error && e.name === 'TimeoutError') {
+      throw new Error('识别超时（90秒），请检查网络后重试')
+    }
+    throw new Error('网络错误，请重试')
+  }
 
   const elapsed = Date.now() - startTime
   console.log('[前端] API 响应耗时:', elapsed, 'ms')

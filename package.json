@@ -6,13 +6,13 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "start": "next start",
-  "lint": "eslint",
-  "db:push": "prisma db push",
-  "db:seed": "prisma db seed",
-  "db:setup": "prisma db push && prisma db seed"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:setup": "prisma db push && prisma db seed"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -24,6 +24,7 @@
     "prisma": "^5.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "sharp": "^0.35.4",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
