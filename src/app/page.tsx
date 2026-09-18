@@ -106,6 +106,8 @@ export default function Home() {
 
   // 图片上传并识别（统一走 lib，携带登录态）
   const handleImageUpload = async (file: File) => {
+    // 防并发：上一轮还没回来时直接忽略，避免重复消耗千问调用并互相覆盖结果
+    if (isRecognizing) return
     setIsRecognizing(true)
     setRecognizeData(null)
 
@@ -114,6 +116,9 @@ export default function Home() {
       toast.success('AI 识别完成，请核对以下信息')
       setRecognizeData(info)
     } catch (error: unknown) {
+      // 用户自己刷新/离开导致的中断（AbortError）静默处理，不弹“网络错误”吓人；
+      // 90 秒超时是 TimeoutError，走 lib 里映射好的友好提示
+      if (error instanceof DOMException && error.name === 'AbortError') return
       const message = error instanceof Error ? error.message : '请重试'
       console.error('[页面] ❌ 识别失败:', error)
       toast.error(`识别失败: ${message}`)
@@ -131,6 +136,7 @@ export default function Home() {
       toast.success('语音识别完成，请核对以下信息')
       setRecognizeData(info)
     } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
       const message = error instanceof Error ? error.message : '请重试'
       console.error('[页面] 语音识别失败:', error)
       toast.error(`语音识别失败: ${message}`)

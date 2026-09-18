@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, DragEvent } from 'react'
+import { useState, useRef, useEffect, DragEvent } from 'react'
 import { page } from '@/lib/api-path'
 import { compressImage } from '@/lib/image'
 import Modal from '@/components/ui/Modal'
@@ -25,6 +25,19 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
+
+  // 识别等待秒数：isLoading 期间每秒+1，给用户明确预期（AI 通常需要 10~40 秒），
+  // 避免用户以为卡死而刷新/重传——刷新会中断请求（服务端记 499），重传会浪费一次千问调用
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    if (!isLoading) {
+      setElapsed(0)
+      return
+    }
+    setElapsed(0)
+    const timer = setInterval(() => setElapsed((s) => s + 1), 1000)
+    return () => clearInterval(timer)
+  }, [isLoading])
 
   // shouldClear 变化时重置预览（渲染期调整，避免 effect 内 setState）
   const [prevShouldClear, setPrevShouldClear] = useState(shouldClear)
@@ -160,7 +173,8 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
                     </g>
                   </svg>
                 </div>
-                <p className="text-indigo-600 font-bold text-sm tracking-wide">AI 正在识别中</p>
+                <p className="text-indigo-600 font-bold text-sm tracking-wide">AI 正在识别中（{elapsed}s）</p>
+                <p className="text-slate-400 text-xs">通常需要 10~40 秒，请稍候，不要离开或刷新页面</p>
               </div>
             ) : (
               <p className="text-slate-500 font-medium text-xs bg-white/50 inline-block px-3 py-1.5 rounded-full border border-slate-100">
