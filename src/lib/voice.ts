@@ -9,6 +9,8 @@ import { StudentInfo, cleanStudentId, generateEmail, mapRole } from './recognize
  * 调用后端 API 进行 AI 语音识别
  * @param fetcher 可注入的请求函数（页面层传入 authFetch 以携带登录态，默认 fetch）
  */
+import { api } from './api-path'
+
 export async function recognizeVoiceWithAI(
   audioBlob: Blob,
   fetcher: (url: string, options?: RequestInit) => Promise<Response> = fetch
@@ -29,7 +31,7 @@ export async function recognizeVoiceWithAI(
   console.log('[前端] 发送请求到 /api/voice-recognize ...')
   const startTime = Date.now()
 
-  const response = await fetcher('/api/voice-recognize', {
+  const response = await fetcher(api('/api/voice-recognize'), {
     method: 'POST',
     body: formData
   })

@@ -5,6 +5,8 @@
  * 语音识别：见 voice.ts
  */
 
+import { api } from './api-path'
+
 export interface StudentInfo {
   studentId: string    // 学号（图片原始格式）
   name: string         // 姓名（繁体中文）
@@ -99,7 +101,7 @@ export async function recognizeWithAI(
   console.log('[前端] 发送请求到 /api/recognize ...')
   const startTime = Date.now()
 
-  const response = await fetcher('/api/recognize', {
+  const response = await fetcher(api('/api/recognize'), {
     method: 'POST',
     body: formData
   })

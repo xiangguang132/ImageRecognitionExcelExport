@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, DragEvent } from 'react'
+import { page } from '@/lib/api-path'
 import Modal from '@/components/ui/Modal'
 import { toast } from '@/components/ui/Toast'
 
@@ -151,14 +152,14 @@ export default function ImageUploader({ onImageUpload, onClear, isLoading, shoul
             {isDragActive ? (
               <>
                 <div className="w-48 h-36 mx-auto animate-bounce">
-                  <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="" className="w-full h-full object-contain drop-shadow-xl opacity-90" />
+                  <img src={page('/illustrations/undraw_upload-warning_aqma.svg')} alt="" className="w-full h-full object-contain drop-shadow-xl opacity-90" />
                 </div>
                 <p className="text-indigo-600 font-bold text-base">松开鼠标上传图片</p>
               </>
             ) : (
               <>
                 <div className="w-48 h-36 mx-auto">
-                  <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="" className="w-full h-full object-contain drop-shadow-md" />
+                  <img src={page('/illustrations/undraw_upload-warning_aqma.svg')} alt="" className="w-full h-full object-contain drop-shadow-md" />
                 </div>
                 <div className="space-y-1">
                   <p className="text-slate-700 font-bold text-base">点击上传学生证图片</p>

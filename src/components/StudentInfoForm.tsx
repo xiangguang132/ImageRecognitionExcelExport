@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { StudentInfo, cleanStudentId, generateEmail, normalizeEmailInput, EMAIL_SUFFIX } from '@/lib/recognize'
+import { page } from '@/lib/api-path'
 import Modal from '@/components/ui/Modal'
 import { toast } from '@/components/ui/Toast'
 
@@ -435,7 +436,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
         <div className="space-y-5">
           <div className="flex justify-center -mt-2 mb-2">
             <div className="w-20 h-20 sm:w-28 sm:h-28">
-              <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Product Hunt Illustration" className="w-full h-full object-contain drop-shadow-md" />
+              <img src={page('/illustrations/undraw_upload-warning_aqma.svg')} alt="Product Hunt Illustration" className="w-full h-full object-contain drop-shadow-md" />
             </div>
           </div>
           <p className="text-slate-600 font-medium text-center text-sm">
@@ -467,7 +468,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
         <div className="space-y-3">
           <div className="flex justify-center -mt-1 mb-1">
             <div className="w-24 h-24">
-              <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Warning" className="w-full h-full object-contain drop-shadow-md" />
+              <img src={page('/illustrations/undraw_upload-warning_aqma.svg')} alt="Warning" className="w-full h-full object-contain drop-shadow-md" />
             </div>
           </div>
           <p className="text-slate-600 font-medium text-center text-sm">

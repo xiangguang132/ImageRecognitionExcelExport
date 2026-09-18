@@ -110,6 +110,22 @@ function getCookieValue(cookieHeader: string | null, name: string): string | nul
 /**
  * 从请求中提取 Bearer token（优先 httpOnly Cookie，其次 Authorization header 兼容旧客户端）
  */
+
+/**
+ * 当前请求是否为 HTTPS（nginx 经 X-Forwarded-Proto 透传）。
+ * Cookie 的 Secure 标记必须与实际协议一致：http 下带 Secure 会被浏览器直接丢弃，
+ * 导致登录后会话无法保持（本项目经 http://IP/card 访问，必须为 false）。
+ */
+export function isSecureRequest(request: Request): boolean {
+  const forwarded = request.headers.get('x-forwarded-proto')
+  if (forwarded) return forwarded.split(',')[0].trim().toLowerCase() === 'https'
+  try {
+    return new URL(request.url).protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 export function extractToken(request: Request): string | null {
   const fromCookie = getCookieValue(request.headers.get('cookie'), AUTH_COOKIE_NAME)
   if (fromCookie) return fromCookie

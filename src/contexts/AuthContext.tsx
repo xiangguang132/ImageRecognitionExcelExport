@@ -8,6 +8,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { api, page } from '@/lib/api-path'
 
 export interface AuthUser {
   id: number
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 初始化：靠 httpOnly Cookie 恢复会话（不再读 localStorage，防 XSS 盗用）
   useEffect(() => {
-    fetch('/api/auth/me', { credentials: 'include' })
+    fetch(api('/api/auth/me'), { credentials: 'include' })
       .then(async (res) => {
         if (res.ok) {
           const data = await res.json()
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const doLogin = useCallback(async (url: string, body: Record<string, string>) => {
     try {
-      const res = await fetch(url, {
+      const res = await fetch(api(url), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -99,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     // 通知服务端清除 httpOnly Cookie（失败也继续清理本地状态）
-    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {})
+    fetch(api('/api/auth/logout'), { method: 'POST', credentials: 'include' }).catch(() => {})
     setToken(null)
     setUser(null)
   }, [])
@@ -111,12 +112,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (token) {
       headers.set('Authorization', `Bearer ${token}`)
     }
-    const response = await fetch(url, { ...options, headers, credentials: 'include' })
+    const response = await fetch(api(url), { ...options, headers, credentials: 'include' })
     if (response.status === 403 && !url.includes('/api/auth/')) {
       try {
         const body = await response.clone().json()
         if (body?.mustChangePassword === 1 && typeof window !== 'undefined') {
-          window.location.replace('/change-password')
+          window.location.replace(page('/change-password'))
         }
       } catch { /* 非 JSON 直接忽略 */ }
     }
@@ -130,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (token) {
         headers.set('Authorization', `Bearer ${token}`)
       }
-      const res = await fetch('/api/auth/me', { headers, credentials: 'include' })
+      const res = await fetch(api('/api/auth/me'), { headers, credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setUser(data.user)

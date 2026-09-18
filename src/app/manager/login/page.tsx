@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from '@/components/ui/Toast'
 
@@ -169,9 +170,9 @@ export default function AdminLoginPage() {
           © {new Date().getFullYear()} Student ID Recognition System
         </p>
         <p className="text-center text-xs mt-2">
-          <a href="/login" className="text-indigo-600 hover:text-indigo-800 font-medium">
+          <Link href="/login" className="text-indigo-600 hover:text-indigo-800 font-medium">
             ← 返回学生登录
-          </a>
+          </Link>
         </p>
       </div>
     </div>

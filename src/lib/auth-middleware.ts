@@ -34,7 +34,8 @@ const PASSWORD_CHANGE_ALLOWLIST = [
 ]
 
 function passwordChangeGuard(request: NextRequest, user: AuthUser): NextResponse | null {
-  if (user.mustChangePassword === 1 && !PASSWORD_CHANGE_ALLOWLIST.includes(request.nextUrl.pathname)) {
+  const pathname = request.nextUrl.pathname.replace(/^\/card(?=\/)/, '')
+  if (user.mustChangePassword === 1 && !PASSWORD_CHANGE_ALLOWLIST.includes(pathname)) {
     return NextResponse.json(
       { error: '请先修改初始密码', mustChangePassword: 1 },
       { status: 403 }

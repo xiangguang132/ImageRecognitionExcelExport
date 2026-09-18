@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyPassword, generateToken } from '@/lib/auth'
+import { verifyPassword, generateToken, isSecureRequest } from '@/lib/auth'
 
 // POST - 学生登录（学号 + 密码 → JWT）
 // 管理员请走 POST /api/auth/admin-login（邮箱 + 密码），两条链路分离。
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24,
-      secure: process.env.NODE_ENV === 'production'
+      secure: isSecureRequest(request)
     })
 
     return response

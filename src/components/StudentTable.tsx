@@ -6,6 +6,7 @@ import Pagination from '@/components/ui/Pagination'
 import { useConfirm } from '@/components/ui/useConfirm'
 import { toast } from '@/components/ui/Toast'
 import { normalizeEmailInput, EMAIL_SUFFIX } from '@/lib/recognize'
+import { api, page } from '@/lib/api-path'
 
 export interface Student {
   id: number
@@ -55,7 +56,7 @@ export default function StudentTable({
     children: (
       <div className="flex flex-col items-center text-center py-2">
         <div className="w-32 h-28 mb-1">
-          <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Confirm Illustration" className="w-full h-full object-contain drop-shadow-md" />
+          <img src={page('/illustrations/undraw_upload-warning_aqma.svg')} alt="Confirm Illustration" className="w-full h-full object-contain drop-shadow-md" />
         </div>
         <p className="text-slate-700 font-bold text-sm">确定要删除这条记录吗？</p>
         <p className="text-xs text-slate-500 mt-1">记录将从列表中隐藏，数据保留在数据库中，导出时不会包含此记录。</p>
@@ -68,7 +69,7 @@ export default function StudentTable({
     children: (
       <div className="flex flex-col items-center text-center py-2">
         <div className="w-28 h-24 mb-1">
-          <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Export Illustration" className="w-full h-full object-contain drop-shadow-md" />
+          <img src={page('/illustrations/undraw_upload-warning_aqma.svg')} alt="Export Illustration" className="w-full h-full object-contain drop-shadow-md" />
         </div>
         <p className="text-slate-700 font-bold text-sm">确定要导出当前数据为 Excel 文件吗？</p>
         <p className="text-xs text-slate-500 mt-1">将导出所有未删除的学生记录。</p>
@@ -113,7 +114,7 @@ export default function StudentTable({
 
     setIsExporting(true)
     try {
-      const fetchFn = authFetch || fetch
+      const fetchFn = authFetch || ((url: string, init?: RequestInit) => fetch(api(url), init))
       const response = await fetchFn('/api/export')
       if (!response.ok) {
         throw new Error('导出失败')
@@ -141,7 +142,7 @@ export default function StudentTable({
     if (!ok) return
     setDeletingId(id)
     try {
-      const fetchFn = authFetch || fetch
+      const fetchFn = authFetch || ((url: string, init?: RequestInit) => fetch(api(url), init))
       const response = await fetchFn(`/api/students/${id}`, {
         method: 'DELETE'
       })
@@ -165,7 +166,7 @@ export default function StudentTable({
 
     setResettingId(id)
     try {
-      const fetchFn = authFetch || fetch
+      const fetchFn = authFetch || ((url: string, init?: RequestInit) => fetch(api(url), init))
       const response = await fetchFn(`/api/students/${id}/reset-password`, {
         method: 'POST'
       })
@@ -232,7 +233,7 @@ export default function StudentTable({
 
     setIsSaving(true)
     try {
-      const fetchFn = authFetch || fetch
+      const fetchFn = authFetch || ((url: string, init?: RequestInit) => fetch(api(url), init))
       const response = await fetchFn(`/api/students/${editingStudent.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -342,7 +343,7 @@ export default function StudentTable({
                 <td colSpan={9} className="px-4 py-10 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3 text-slate-400">
                     <div className="w-48 h-36">
-                      <img src="/illustrations/undraw_upload-warning_aqma.svg" alt="Empty Illustration" className="w-full h-full object-contain drop-shadow-sm opacity-90" />
+                      <img src={page('/illustrations/undraw_upload-warning_aqma.svg')} alt="Empty Illustration" className="w-full h-full object-contain drop-shadow-sm opacity-90" />
                     </div>
                     <div className="space-y-0.5">
                       <p className="font-bold text-slate-500 text-base">暂无数据</p>
