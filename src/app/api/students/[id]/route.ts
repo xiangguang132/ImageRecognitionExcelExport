@@ -98,7 +98,8 @@ export const PUT = withAdminParams(async (request, context) => {
       data: {
         studentId: normalizedNewId || undefined,
         name: name ?? undefined,
-        email: normalizedEmail || undefined,
+        // 空字符串表示清空邮箱（存 NULL）；非空则更新
+        email: email === '' ? null : normalizedEmail || undefined,
         major: major ?? undefined,
         identity: identity ?? undefined,
         interestDirection: interestDirection ?? undefined,

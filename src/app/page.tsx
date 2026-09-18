@@ -7,6 +7,7 @@ import ImageUploader from '@/components/ImageUploader'
 import StudentInfoForm from '@/components/StudentInfoForm'
 import VoiceRecorder, { useVoiceRecordingSupport } from '@/components/VoiceRecorder'
 import StudentTable, { Student } from '@/components/StudentTable'
+import Modal from '@/components/ui/Modal'
 import { useConfirm } from '@/components/ui/useConfirm'
 import { recognizeWithAI, StudentInfo } from '@/lib/recognize'
 import { recognizeVoiceWithAI } from '@/lib/voice'
@@ -80,6 +81,29 @@ export default function Home() {
     return () => { cancelled = true }
   }, [isAdmin, authFetch, pageSize, logout, router])
 
+  // 学生端：预填本人档案（库里有就填上；识别/手工改完提交即更新本人行）
+  useEffect(() => {
+    if (authLoading || isAdmin || !user || recognizeData) return
+    let cancelled = false
+    authFetch('/api/students/mine')
+      .then(async (response) => {
+        if (cancelled || !response.ok) return
+        const me = await response.json()
+        if (cancelled) return
+        setRecognizeData({
+          studentId: me.studentId || '',
+          name: me.name || '',
+          email: me.email || '',
+          major: me.major || '',
+          role: me.identity || me.role || '',
+          interestDirection: me.interestDirection || '',
+          interestTopic: me.interestTopic || ''
+        })
+      })
+      .catch(() => { /* 无档案时静默，学生填完提交即新建关联 */ })
+    return () => { cancelled = true }
+  }, [authLoading, isAdmin, user, recognizeData, authFetch])
+
   // 图片上传并识别（统一走 lib，携带登录态）
   const handleImageUpload = async (file: File) => {
     setIsRecognizing(true)
@@ -120,12 +144,31 @@ export default function Home() {
     setIsSubmitting(true)
 
     try {
-      const response = await authFetch('/api/students', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
+      await submitStudent(data)
+    } catch (error: unknown) {
+      console.error('提交失败:', error)
+      toast.error(error instanceof Error ? error.message : '提交失败，请重试')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
+  // 邮箱碰撞待处理数据（409 + conflict 时暂存，弹窗让用户二选一）
+  const [conflictData, setConflictData] = useState<StudentInfo | null>(null)
+  const [conflictResolving, setConflictResolving] = useState(false)
+
+  // 提交学生信息（emailConflict: 碰撞时的处理策略 skip=不填邮箱 / suffix=追加随机字母）
+  // 学生走独立接口 PUT /api/students/mine，只提交兴趣字段，硬性信息后端直接忽略
+  const submitStudent = async (data: StudentInfo, emailConflict?: 'skip' | 'suffix') => {
+    if (!isAdmin) {
+      const response = await authFetch('/api/students/mine', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          interestDirection: data.interestDirection,
+          interestTopic: data.interestTopic
+        })
+      })
       if (!response.ok) {
         let serverError = '提交失败，请重试'
         try {
@@ -134,24 +177,67 @@ export default function Home() {
         } catch { /* 忽略解析失败 */ }
         throw new Error(serverError)
       }
-
-      toast.success('提交信息成功')
+      const row = await response.json()
+      toast.success('兴趣信息已更新')
+      // 清空后预填 effect 会重新拉取最新档案
       setRecognizeData(null)
+      return row
+    }
 
-      // 提交成功后回到第一页并刷新（仅管理员）
-      if (isAdmin) {
-        setCurrentPage(1)
-        await fetchStudents(1)
+    const response = await authFetch('/api/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailConflict ? { ...data, emailConflict } : data)
+    })
+
+    if (!response.ok) {
+      let serverError = '提交失败，请重试'
+      let isConflict = false
+      try {
+        const err = await response.json()
+        if (err?.error) serverError = err.error
+        if (err?.conflict) isConflict = true
+      } catch { /* 忽略解析失败 */ }
+      // 邮箱碰撞且未指定策略：不报错，弹窗让用户选择
+      if (isConflict && !emailConflict) {
+        setConflictData(data)
+        return null
       }
+      throw new Error(serverError)
+    }
 
-      // 重置表单和图片
-      setClearImage(true)
-      setTimeout(() => setClearImage(false), 100)
+    const row = await response.json()
+    toast.success(
+      emailConflict === 'suffix' && row?.email
+        ? `提交成功，邮箱已调整为 ${row.email}`
+        : isAdmin ? '提交信息成功' : '本人档案已更新'
+    )
+    setRecognizeData(null)
+
+    // 提交成功后回到第一页并刷新（仅管理员）
+    if (isAdmin) {
+      setCurrentPage(1)
+      await fetchStudents(1)
+    }
+
+    // 重置表单和图片
+    setClearImage(true)
+    setTimeout(() => setClearImage(false), 100)
+    return row
+  }
+
+  // 碰撞弹窗中的选择：不填邮箱 / 追加随机字母
+  const resolveConflict = async (strategy: 'skip' | 'suffix') => {
+    if (!conflictData) return
+    setConflictResolving(true)
+    try {
+      await submitStudent(conflictData, strategy)
+      setConflictData(null)
     } catch (error: unknown) {
       console.error('提交失败:', error)
       toast.error(error instanceof Error ? error.message : '提交失败，请重试')
     } finally {
-      setIsSubmitting(false)
+      setConflictResolving(false)
     }
   }
 
@@ -242,7 +328,7 @@ export default function Home() {
               <div className="hidden sm:block">
                 <p className="text-xs font-bold text-slate-700 leading-tight">{user.name}</p>
                 <p className="text-[10px] text-slate-400 font-medium leading-tight">
-                  {isAdmin ? '管理员' : '普通用户'}
+                  {isAdmin ? '管理员' : '学生'}
                 </p>
               </div>
               <button
@@ -277,9 +363,13 @@ export default function Home() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                  信息录入
+                  {isAdmin ? '信息录入' : '我的信息'}
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">上传图片或语音录入，系统将自动提取关键信息</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {isAdmin
+                    ? '上传图片或语音录入，系统将自动提取关键信息'
+                    : '上传学生证识别后可修改，提交即更新本人档案'}
+                </p>
               </div>
             </div>
             <button
@@ -302,13 +392,14 @@ export default function Home() {
             shouldClear={clearImage}
           />
 
-          {/* 识别结果表单 */}
+          {/* 识别结果表单（学生端锁定硬性信息，只能改兴趣） */}
           <StudentInfoForm
             initialData={recognizeData}
             onSubmit={handleSubmit}
             onReset={handleFormReset}
             isSubmitting={isSubmitting}
             isRecognizing={isRecognizing || isVoiceRecognizing}
+            lockIdentity={!isAdmin}
           />
 
           {/* 语音录制弹窗 */}
@@ -381,6 +472,44 @@ export default function Home() {
       </footer>
 
       <logoutConfirm.Dialog />
+
+      {/* 邮箱碰撞二选一 */}
+      <Modal
+        isOpen={!!conflictData}
+        onClose={() => setConflictData(null)}
+        title="邮箱已被使用"
+      >
+        <div className="space-y-3 text-sm text-slate-600">
+          <p>
+            按甲方规则（学号去尾）生成的邮箱
+            <span className="font-bold text-slate-900"> {conflictData?.email || '(空)'} </span>
+            已被其他学生使用，数据未入库。请选择处理方式：
+          </p>
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              onClick={() => resolveConflict('skip')}
+              disabled={conflictResolving}
+              className="w-full py-2.5 rounded-xl font-bold text-sm bg-white border-2 border-slate-200 hover:border-indigo-400 hover:text-indigo-700 transition-all disabled:opacity-50"
+            >
+              不填邮箱，直接提交
+            </button>
+            <button
+              onClick={() => resolveConflict('suffix')}
+              disabled={conflictResolving}
+              className="w-full py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 transition-all disabled:opacity-50"
+            >
+              {conflictResolving ? '提交中...' : '在 @ 前追加随机字母后提交'}
+            </button>
+            <button
+              onClick={() => setConflictData(null)}
+              disabled={conflictResolving}
+              className="w-full py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-50"
+            >
+              手工修改邮箱（关闭后在表单中修改再提交）
+            </button>
+          </div>
+        </div>
+      </Modal>
 
     </div>
   )

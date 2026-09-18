@@ -11,6 +11,25 @@ import { withAdmin } from '@/lib/auth-middleware'
 // 默认初始密码（bcrypt 入库，学生首次登录强制改密）
 const DEFAULT_PASSWORD = '123456'
 
+const RANDOM_LETTERS = 'abcdefghijklmnopqrstuvwxyz'
+
+/**
+ * 邮箱碰撞时在 @ 前追加随机字母（如 ac20130@ → ac20130x@），
+ * 最多重试 50 次；返回可用的新邮箱，分配失败返回 null。
+ */
+async function resolveEmailWithRandomSuffix(email: string): Promise<string | null> {
+  const at = email.lastIndexOf('@')
+  if (at <= 0) return null
+  const prefix = email.slice(0, at)
+  const domain = email.slice(at)
+  for (let i = 0; i < 50; i++) {
+    const candidate = `${prefix}${RANDOM_LETTERS[Math.floor(Math.random() * RANDOM_LETTERS.length)]}${domain}`
+    const taken = await prisma.user.findUnique({ where: { email: candidate } })
+    if (!taken) return candidate
+  }
+  return null
+}
+
 // 行映射：把 DB 列 identity 以旧契约名 role 返回，前端零改动
 function toStudentRow(u: {
   id: number; studentId: string | null; name: string | null; email: string | null;
@@ -66,7 +85,11 @@ export const GET = withAdmin(async (request) => {
 })
 
 // POST - 新增学生信息并开通账号（仅管理员）
-// 邮箱为登录键必填；密码默认 123456，mustChangePassword = 1 强制学生首次改密
+// 学生本人更新兴趣信息请走 PUT /api/students/mine（白名单仅两个兴趣字段）。
+// 邮箱沿甲方规则「学号去尾」自动生成；为空或碰撞时：
+// - emailConflict === 'skip'：不存邮箱直接入库
+// - emailConflict === 'suffix'：在 @ 前追加随机字母后入库（最多重试 50 次）
+// - 否则碰撞返回 409 + conflict: true，由前端弹窗让用户二选一
 export const POST = withAdmin(async (request) => {
   try {
     const body = await request.json()
@@ -81,13 +104,10 @@ export const POST = withAdmin(async (request) => {
       )
     }
 
-    const email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : ''
-    if (!email) {
-      return NextResponse.json(
-        { error: '请填写邮箱（邮箱为学生登录账号）' },
-        { status: 400 }
-      )
-    }
+    const emailStrategy = body.emailConflict === 'skip' ? 'skip'
+      : body.emailConflict === 'suffix' ? 'suffix' : null
+    let email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : ''
+    if (emailStrategy === 'skip') email = ''
 
     // 在校身份：兼容新旧字段名（identity / role）
     const identity = typeof body.identity === 'string' && body.identity
@@ -103,6 +123,34 @@ export const POST = withAdmin(async (request) => {
       )
     }
 
+    // 邮箱冲突处理（排除自己后依然被占用的情况）
+    // 返回：resolvedEmail（可入库的邮箱，'' 表示不存）或直接返回 Response（409）
+    const resolveEmail = async (selfId: number | null): Promise<string | Response> => {
+      if (!email) return ''
+      const existingEmail = await prisma.user.findUnique({ where: { email } })
+      if (existingEmail && existingEmail.id !== selfId) {
+        if (emailStrategy === 'suffix') {
+          const resolved = await resolveEmailWithRandomSuffix(email)
+          if (!resolved) {
+            return NextResponse.json(
+              { error: '邮箱随机后缀分配失败，请手工修改邮箱后重试', conflict: true },
+              { status: 409 }
+            )
+          }
+          return resolved
+        }
+        return NextResponse.json(
+          {
+            error: '该邮箱已被使用（可能是学号去尾后相同），请选择不填邮箱、追加随机字母，或手工修改邮箱',
+            conflict: true
+          },
+          { status: 409 }
+        )
+      }
+      return email
+    }
+
+    // ---- 管理员：新建 ----
     // 学号去重（未删除记录中已存在则拒绝，避免重复录入）
     const existingSid = await prisma.user.findFirst({
       where: { studentId, isDel: 0 }
@@ -114,20 +162,15 @@ export const POST = withAdmin(async (request) => {
       )
     }
 
-    // 邮箱去重（邮箱为登录键）
-    const existingEmail = await prisma.user.findUnique({ where: { email } })
-    if (existingEmail) {
-      return NextResponse.json(
-        { error: '该邮箱已存在，请勿重复录入' },
-        { status: 409 }
-      )
-    }
+    const resolved = await resolveEmail(null)
+    if (resolved instanceof Response) return resolved
+    email = resolved
 
     const student = await prisma.user.create({
       data: {
         studentId, // 存去空格后的值，与判重字段一致
         name: body.name || null,
-        email,
+        email: email || null,
         password: await hashPassword(DEFAULT_PASSWORD),
         role: 'user',
         major: body.major || null,

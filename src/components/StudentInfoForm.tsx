@@ -11,6 +11,8 @@ interface StudentInfoFormProps {
   onReset: () => void
   isSubmitting: boolean
   isRecognizing?: boolean
+  /** 学生模式：锁定硬性信息（学号/姓名/角色/邮箱/专业），只能改兴趣字段 */
+  lockIdentity?: boolean
 }
 
 const emptyForm: StudentInfo = {
@@ -23,7 +25,7 @@ const emptyForm: StudentInfo = {
   interestTopic: ''
 }
 
-export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubmitting, isRecognizing = false }: StudentInfoFormProps) {
+export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubmitting, isRecognizing = false, lockIdentity = false }: StudentInfoFormProps) {
   const [formData, setFormData] = useState<StudentInfo>(emptyForm)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
@@ -80,21 +82,24 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
     e.preventDefault()
 
     // 代码级拦截所有必填字段，统一使用应用内提示，不依赖浏览器原生校验
-    if (!formData.studentId.trim()) {
-      toast.error('请输入学号')
-      return
-    }
-    if (!formData.name.trim()) {
-      toast.error('请输入姓名')
-      return
-    }
-    if (!formData.role) {
-      toast.error('请选择角色')
-      return
-    }
-    if (!formData.major.trim()) {
-      toast.error('请输入专业')
-      return
+    // 学生模式只校验兴趣字段（硬性信息被锁定，来自本人档案预填）
+    if (!lockIdentity) {
+      if (!formData.studentId.trim()) {
+        toast.error('请输入学号')
+        return
+      }
+      if (!formData.name.trim()) {
+        toast.error('请输入姓名')
+        return
+      }
+      if (!formData.role) {
+        toast.error('请选择角色')
+        return
+      }
+      if (!formData.major.trim()) {
+        toast.error('请输入专业')
+        return
+      }
     }
     if (!formData.interestDirection) {
       toast.error('请至少选择一个未来兴趣方向')
@@ -161,7 +166,9 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 核对识别结果
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                请确保所有信息准确无误后再提交
+                {lockIdentity
+                  ? '灰色字段由管理员维护，你只能更新下方兴趣信息'
+                  : '请确保所有信息准确无误后再提交'}
               </p>
             </div>
           </div>
@@ -181,7 +188,9 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                   name="studentId"
                   value={formData.studentId}
                   onChange={handleChange}
-                  className="w-full pl-2.5 pr-16 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm group-hover:shadow-md"
+                  disabled={lockIdentity}
+                  title={lockIdentity ? '学号由管理员维护' : undefined}
+                  className="w-full pl-2.5 pr-16 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm group-hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                   placeholder="AC201301"
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
@@ -203,7 +212,9 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
+                disabled={lockIdentity}
+                title={lockIdentity ? '姓名由管理员维护' : undefined}
+                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                 placeholder="请输入姓名"
               />
             </div>
@@ -221,7 +232,9 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm appearance-none group-hover:shadow-md"
+                  disabled={lockIdentity}
+                  title={lockIdentity ? '身份角色由管理员维护' : undefined}
+                  className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm appearance-none group-hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   <option value="">请选择角色</option>
                   <option value="student">Student (学生)</option>
@@ -250,7 +263,9 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                   value={formData.email}
                   onChange={handleChange}
                   onBlur={handleEmailBlur}
-                  className="w-full pl-2.5 pr-10 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
+                  disabled={lockIdentity}
+                  title={lockIdentity ? '邮箱由管理员维护' : undefined}
+                  className="w-full pl-2.5 pr-10 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                   placeholder="输入学号后自动生成"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-serif italic font-bold text-[10px]">
@@ -272,7 +287,9 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 name="major"
                 value={formData.major}
                 onChange={handleChange}
-                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
+                disabled={lockIdentity}
+                title={lockIdentity ? '专业由管理员维护' : undefined}
+                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                 placeholder="请输入专业名称"
               />
             </div>

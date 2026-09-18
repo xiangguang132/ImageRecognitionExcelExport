@@ -40,10 +40,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 签发 JWT
+    // 签发 JWT（邮箱可空，对外统一为空字符串）
     const token = generateToken({
       id: user.id,
-      email: user.email,
+      email: user.email ?? '',
       role: user.role
     })
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       token,
       user: {
         id: user.id,
-        email: user.email,
+        email: user.email ?? '',
         name: user.name,
         role: user.role,
         studentId: user.studentId,

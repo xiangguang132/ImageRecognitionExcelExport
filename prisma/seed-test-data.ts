@@ -15,10 +15,15 @@ async function main() {
   const hash = await bcrypt.hash(DEFAULT_PASSWORD, 10)
 
   // ---- 测试学生账号（25 条，覆盖分页 5/10/15）----
+  // 邮箱按甲方规则「学号去尾」生成；测试学号末位不同会撞邮箱，撞了就用完整学号兜底
   let created = 0
   for (let i = 0; i < 25; i++) {
     const studentId = `TC2024${String(i + 1).padStart(3, '0')}`
-    const email = `${studentId.toLowerCase()}@connect.um.edu.mo`
+    const stripped = studentId.length > 1 ? studentId.slice(0, -1).toLowerCase() : studentId.toLowerCase()
+    let email = `${stripped}@connect.um.edu.mo`
+    if (await prisma.user.findUnique({ where: { email } })) {
+      email = `${studentId.toLowerCase()}@connect.um.edu.mo`
+    }
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) continue
     await prisma.user.create({

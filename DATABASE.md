@@ -16,13 +16,17 @@
   管理员用**邮箱**登录（`POST /api/auth/admin-login`，页面 `/admin/login`）。
 - **默认密码**：管理员导入/录入学生时密码为 `123456`（bcrypt 入库），
   `must_change_password = 1`，学生首次登录必须强制改密。
+- **邮箱规则（甲方固定）**：默认 `学号去尾 + @connect.um.edu.mo`
+  （如 `AC201301 → ac20130@…`）。末位不同的学号会生成同一邮箱，
+  碰撞时录入弹窗二选一：**不填邮箱入库**（`email` 为空，学号登录不受影响）
+  或 **在 @ 前追加随机字母**（如 `ac20130x@…`）；也可手工修改为真实邮箱。
 
 ## 表结构（`users`）
 
 | 列 | 类型 | 说明 |
 |---|---|---|
 | id | INTEGER PK | 自增 |
-| email | TEXT UNIQUE | 邮箱（管理员登录键；学生邮箱仅作联系信息） |
+| email | TEXT UNIQUE，可空 | 邮箱（碰撞时可空；学生登录键是学号） |
 | student_id | TEXT UNIQUE，可空 | 学号（学生登录键） |
 | name | TEXT | 姓名 |
 | password | TEXT | bcrypt hash |

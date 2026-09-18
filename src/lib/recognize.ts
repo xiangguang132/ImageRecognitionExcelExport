@@ -27,8 +27,11 @@ export function cleanStudentId(raw: string): string {
 
 /**
  * 根据学号生成默认邮箱
- * 规则：学号去掉最后一位 + @connect.um.edu.mo
+ * 规则（甲方固定要求）：学号去掉最后一位 + @connect.um.edu.mo
  * 例如 AC201301 → ac20130@connect.um.edu.mo
+ *
+ * 注意：该规则下末位不同的学号（如 AC201301 / AC201302）会生成同一邮箱。
+ * 入库时若邮箱已存在，后端返回 409，管理员需核对该学生的真实邮箱后手工修改再提交。
  */
 export function generateEmail(studentId: string): string {
   // 按甲方规格：无条件去掉最后一位（学号末位恒为数字校验位）

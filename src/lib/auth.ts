@@ -151,5 +151,7 @@ export async function getCurrentUser(request: Request): Promise<AuthUser | null>
     select: { id: true, email: true, name: true, role: true, mustChangePassword: true }
   })
 
-  return user as AuthUser | null
+  // 邮箱可空（碰撞时可选择不填），对外统一为空字符串
+  if (!user) return null
+  return { ...user, email: user.email ?? '' } as AuthUser
 }

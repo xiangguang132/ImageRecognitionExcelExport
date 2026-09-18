@@ -17,7 +17,7 @@ datasource db {
 
 model User {
   id                  Int      @id @default(autoincrement())
-  email               String   @unique
+  email               String?  @unique // 可空：邮箱碰撞时可选择不填（SQLite 下多个 NULL 不冲突）
   name                String
   password            String                            // bcrypt hash
   role                String   @default("user")         // 权限：DB 中恒为 "user"，"admin" 只存在于虚拟账号
