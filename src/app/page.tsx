@@ -308,18 +308,6 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* 管理员入口 */}
-            {isAdmin && (
-              <button
-                onClick={() => router.push('/admin/users')}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 transition-all"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <span className="hidden sm:inline">用户管理</span>
-              </button>
-            )}
             {/* 用户信息 + 退出 */}
             <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">

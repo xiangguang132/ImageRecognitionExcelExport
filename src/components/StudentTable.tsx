@@ -74,6 +74,17 @@ export default function StudentTable({
       </div>
     )
   })
+  const [resettingId, setResettingId] = useState<number | null>(null)
+  const resetConfirm = useConfirm({
+    title: '确认重置密码',
+    confirmText: '确认重置',
+    children: (
+      <div className="flex flex-col items-center text-center py-2">
+        <p className="text-slate-700 font-bold text-sm">将该学生密码重置为 123456？</p>
+        <p className="text-xs text-slate-500 mt-1">学生下次登录需强制改密。</p>
+      </div>
+    )
+  })
 
   // 编辑状态
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
@@ -127,7 +138,6 @@ export default function StudentTable({
   const handleDelete = async (id: number) => {
     const ok = await deleteConfirm.confirm()
     if (!ok) return
-
     setDeletingId(id)
     try {
       const fetchFn = authFetch || fetch
@@ -145,6 +155,34 @@ export default function StudentTable({
       toast.error('删除失败，请重试')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const handleResetPassword = async (id: number) => {
+    const ok = await resetConfirm.confirm()
+    if (!ok) return
+
+    setResettingId(id)
+    try {
+      const fetchFn = authFetch || fetch
+      const response = await fetchFn(`/api/students/${id}/reset-password`, {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        let serverError = '重置失败'
+        try {
+          const err = await response.json()
+          if (err?.error) serverError = err.error
+        } catch { /* 忽略解析失败 */ }
+        throw new Error(serverError)
+      }
+
+      toast.success('已重置为 123456，学生下次登录需改密')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '重置失败，请重试')
+    } finally {
+      setResettingId(null)
     }
   }
 
@@ -357,6 +395,23 @@ export default function StudentTable({
                         </svg>
                       </button>
                       <button
+                        onClick={() => handleResetPassword(student.id)}
+                        disabled={resettingId === student.id}
+                        className="text-slate-400 hover:text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-all disabled:opacity-50"
+                        title="重置密码为 123456"
+                      >
+                        {resettingId === student.id ? (
+                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                          </svg>
+                        )}
+                      </button>
+                      <button
                         onClick={() => handleDelete(student.id)}
                         disabled={deletingId === student.id}
                         className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-all disabled:opacity-50"
@@ -393,6 +448,7 @@ export default function StudentTable({
 
       <deleteConfirm.Dialog />
       <exportConfirm.Dialog />
+      <resetConfirm.Dialog />
 
       {/* 编辑弹窗 */}
       <Modal
