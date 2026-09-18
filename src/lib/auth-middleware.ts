@@ -23,6 +23,27 @@ type AuthenticatedHandlerWithParams = (
 ) => Promise<NextResponse | Response>
 
 /**
+ * 强制改密拦截：mustChangePassword = 1 的账号只能调改密/查自己/退出，
+ * 其他接口一律 403（前端跳转拦不住直接调接口的情况）。
+ * 管理员为虚拟账号（flag 恒为 0），不受影响。
+ */
+const PASSWORD_CHANGE_ALLOWLIST = [
+  '/api/auth/change-password',
+  '/api/auth/me',
+  '/api/auth/logout'
+]
+
+function passwordChangeGuard(request: NextRequest, user: AuthUser): NextResponse | null {
+  if (user.mustChangePassword === 1 && !PASSWORD_CHANGE_ALLOWLIST.includes(request.nextUrl.pathname)) {
+    return NextResponse.json(
+      { error: '请先修改初始密码', mustChangePassword: 1 },
+      { status: 403 }
+    )
+  }
+  return null
+}
+
+/**
  * 要求用户已登录（任意角色）
  */
 export function withAuth(handler: AuthenticatedHandler) {
@@ -34,6 +55,8 @@ export function withAuth(handler: AuthenticatedHandler) {
         { status: 401 }
       )
     }
+    const blocked = passwordChangeGuard(request, user)
+    if (blocked) return blocked
     return handler(request, user)
   }
 }
@@ -56,6 +79,8 @@ export function withAdmin(handler: AuthenticatedHandler) {
         { status: 403 }
       )
     }
+    const blocked = passwordChangeGuard(request, user)
+    if (blocked) return blocked
     return handler(request, user)
   }
 }
@@ -72,6 +97,8 @@ export function withAuthParams(handler: AuthenticatedHandlerWithParams) {
         { status: 401 }
       )
     }
+    const blocked = passwordChangeGuard(request, user)
+    if (blocked) return blocked
     return handler(request, context, user)
   }
 }
@@ -94,6 +121,8 @@ export function withAdminParams(handler: AuthenticatedHandlerWithParams) {
         { status: 403 }
       )
     }
+    const blocked = passwordChangeGuard(request, user)
+    if (blocked) return blocked
     return handler(request, context, user)
   }
 }
