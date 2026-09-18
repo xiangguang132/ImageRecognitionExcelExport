@@ -18,6 +18,7 @@ dist/
 *.db
 *.db-journal
 *.db-wal
+prisma/*.bak*
 
 # prisma migrations (local dev generated)
 prisma/migrations/
