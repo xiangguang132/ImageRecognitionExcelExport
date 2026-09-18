@@ -105,12 +105,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // 带认证的 fetch 封装（Cookie 自动随 same-origin 请求发送，内存 token 做 header 兜底）
+  // 服务端强制改密（403 + mustChangePassword）时直接跳改密页
   const authFetch = useCallback(async (url: string, options: RequestInit = {}): Promise<Response> => {
     const headers = new Headers(options.headers)
     if (token) {
       headers.set('Authorization', `Bearer ${token}`)
     }
-    return fetch(url, { ...options, headers, credentials: 'include' })
+    const response = await fetch(url, { ...options, headers, credentials: 'include' })
+    if (response.status === 403 && !url.includes('/api/auth/')) {
+      try {
+        const body = await response.clone().json()
+        if (body?.mustChangePassword === 1 && typeof window !== 'undefined') {
+          window.location.replace('/change-password')
+        }
+      } catch { /* 非 JSON 直接忽略 */ }
+    }
+    return response
   }, [token])
 
   // 刷新当前用户信息
