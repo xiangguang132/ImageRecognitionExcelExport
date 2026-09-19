@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学生证识别系统 — 应用流程图（学生免登录 · 管理员登录）</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --card: #f8f9fc;
+    --border: #e2e5ee;
+    --accent2: #10b981;
+    --text: #1e293b;
+    --text2: #64748b;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #e3ead1;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    padding: 8px;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  .page { background: #fff; border-radius: 22px; overflow: hidden; max-width: 1800px; margin: 0 auto; zoom: .68; }
+  .browser { display: flex; align-items: center; gap: 14px; background: #f3f4f6; padding: 10px 22px; }
+  .browser .sk { background: #e2e3e7; border-radius: 6px; }
+  .browser .left .sk { height: 14px; } .browser .left .sk:first-child { width: 150px; margin-bottom: 8px; } .browser .left .sk:last-child { width: 90px; }
+  .browser .mid { flex: 1; display: flex; justify-content: center; gap: 12px; } .browser .mid .sk { width: 44px; height: 36px; border-radius: 8px; }
+  .browser .right { display: flex; align-items: center; } .browser .right i { width: 44px; height: 44px; border-radius: 50%; background: #ddd; display: block; margin-left: -10px; border: 3px solid #f3f4f6; } .browser .right .sk { width: 96px; height: 38px; border-radius: 10px; margin-left: 46px; }
+  .content { padding: 10px 26px 14px; }
+  h1 { text-align: center; font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 2px; }
+  .subtitle { text-align: center; color: #1e293b; font-size: 14px; margin-bottom: 8px; }
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .diagram-wrapper {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 8px;
+    overflow-x: auto;
+    box-shadow: var(--shadow-sm);
+  }
+  .footer { text-align: center; color: #1e293b; font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .nav { text-align: center; margin-bottom: 8px; font-size: 14px; color: #1e293b; }
+  .nav a { color: #1d4ed8; text-decoration: none; font-weight: 600; }
+  @media (max-width: 768px) { body { padding: 24px 16px; } .diagram-wrapper { padding: 20px; } }
+  @media print { body { max-width: none; } .diagram-wrapper { break-inside: avoid; box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+<div class="browser"><div class="left"><div class="sk"></div><div class="sk"></div></div><div class="mid"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div><div class="right"><i></i><i></i><i></i><div class="sk"></div></div></div>
+<div class="content">
+
+<div class="diagram-wrapper">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1216 720" style="width:100%;max-width:1600px;height:auto;display:block;margin:0 auto;font-family:-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;">
+    <defs>
+      <marker id="ah" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#4b5563"/>
+      </marker>
+    </defs>
+
+    <!-- ===== 顶部：用户 ===== -->
+    <rect x="358" y="8" width="500" height="64" fill="#ffffff" stroke="#d8dce3" stroke-width="1" rx="8"/>
+    <g transform="translate(382,24)" style="color:#434343">
+      <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="7" r="4"/><path d="M2 20c0-4 3.5-6 7-6s7 2 7 6"/><circle cx="21" cy="8" r="3"/><path d="M18 14.5c2.8.4 5 2 5 5.5"/>
+      </g>
+    </g>
+    <text x="624" y="41" text-anchor="middle" fill="#111111" font-size="16">双入口 · 学生端免登录公开 / 管理端管理员登录</text>
+
+    <!-- ===== 外层灰底容器 ===== -->
+    <rect x="8" y="112" width="1200" height="600" fill="#f1f2f4"/>
+    <text x="32" y="140" fill="#374151" font-size="15">Student Card System</text>
+
+    <!-- ===== Region 白底 ===== -->
+    <rect x="32" y="154" width="1152" height="262" fill="#ffffff"/>
+    <text x="52" y="182" fill="#374151" font-size="15">App Framework · Next.js · Region</text>
+
+    <!-- ===== 左：UI + Service 分组 ===== -->
+    <rect x="80" y="195" width="520" height="210" fill="#ffffff" stroke="#d8dce3" stroke-width="1"/>
+    <g transform="translate(100,207)" style="color:#2f6bf6">
+      <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 6l6-4 6 4M2 12l6-4 6 4M2 18l6-4 6 4"/><circle cx="19" cy="17" r="2.4"/><path d="M19 18.5l4 4"/>
+      </g>
+    </g>
+    <text x="340" y="225" text-anchor="middle" fill="#111111" font-size="14" font-weight="600">UI · Web 前端 · Service 后端</text>
+    <text x="340" y="240" text-anchor="middle" fill="#64748b" font-size="13">User Interface</text>
+
+    <!-- UI -->
+    <rect x="100" y="252" width="230" height="136" fill="#edf1fd"/>
+    <g transform="translate(195,264)" style="color:#2f6bf6">
+      <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="0" y="2" width="22" height="16" rx="1"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="8" y1="12.5" x2="14" y2="12.5"/>
+      </g>
+    </g>
+    <text x="215" y="302" text-anchor="middle" fill="#111111" font-size="15">UI · Web（双端）</text>
+    <text x="215" y="320" text-anchor="middle" fill="#1f2937" font-size="12">学生端：拍照·语音·手动填报</text>
+    <text x="215" y="335" text-anchor="middle" fill="#1f2937" font-size="12">管理端：识别 + 导出 Excel + 增改删查</text>
+    <text x="215" y="364" text-anchor="middle" fill="#94a3b8" font-size="11">学生端无导出入口</text>
+
+    <!-- Service -->
+    <rect x="350" y="252" width="230" height="136" fill="#edf1fd"/>
+    <g transform="translate(445,264)" style="color:#2f6bf6">
+      <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="1" width="9" height="9" rx="1"/><circle cx="16.5" cy="5.5" r="3.5"/><rect x="1" y="12" width="9" height="9" rx="1"/><rect x="12" y="12" width="9" height="9" rx="1"/>
+      </g>
+    </g>
+    <text x="465" y="304" text-anchor="middle" fill="#111111" font-size="15">Service</text>
+    <text x="465" y="323" text-anchor="middle" fill="#1f2937" font-size="12">公开免鉴权：识别·语音·提交</text>
+    <text x="465" y="353" text-anchor="middle" fill="#1f2937" font-size="12">管理员：增查改删·导出</text>
+
+    <!-- Web ↔ Service -->
+    <line x1="330" y1="295" x2="346" y2="295" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="338" y="288" text-anchor="middle" fill="#374151" font-size="12">调用</text>
+    <line x1="350" y1="325" x2="334" y2="325" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="342" y="339" text-anchor="middle" fill="#374151" font-size="12">返回</text>
+
+    <!-- ===== 右：数据库 ===== -->
+    <rect x="786" y="200" width="240" height="196" fill="#ffffff" stroke="#d8dce3" stroke-width="1"/>
+    <g transform="translate(888,246)" style="color:#2f6bf6">
+      <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 8a12 6 0 0 1 24 0v10a12 6 0 0 1-24 0z"/><path d="M4 8a12 6 0 0 0 24 0M4 13a12 6 0 0 0 24 0"/><path d="M20 6l3-3 2 2-3 3z"/><path d="M22 4l4-4" opacity=".9"/>
+      </g>
+    </g>
+    <text x="906" y="296" text-anchor="middle" fill="#111111" font-size="16">Database</text>
+    <text x="906" y="315" text-anchor="middle" fill="#1f2937" font-size="13">Prisma · SQLite</text>
+    <text x="906" y="335" text-anchor="middle" fill="#b45309" font-size="13">ExcelJS 导出（仅管理员）</text>
+
+    <!-- Service → DB -->
+    <line x1="600" y1="298" x2="778" y2="298" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="689" y="290" text-anchor="middle" fill="#374151" font-size="13">写入数据</text>
+
+    <!-- 用户 → Region -->
+    <line x1="560" y1="72" x2="560" y2="192" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="532" y="138" text-anchor="middle" fill="#374151" font-size="13">提交请求</text>
+    <line x1="656" y1="192" x2="656" y2="72" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="684" y="138" text-anchor="middle" fill="#374151" font-size="13">返回结果</text>
+
+    <!-- Region → MaaS -->
+    <line x1="400" y1="396" x2="400" y2="434" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="366" y="421" text-anchor="middle" fill="#374151" font-size="13">调用 API</text>
+    <line x1="490" y1="434" x2="490" y2="396" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="522" y="421" text-anchor="middle" fill="#374151" font-size="13">返回结果</text>
+    <!-- DB → 下层 -->
+    <line x1="906" y1="396" x2="906" y2="434" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+    <text x="906" y="421" text-anchor="middle" fill="#374151" font-size="12">管理员查询 / 导出</text>
+
+    <!-- ===== 中间：MaaS 层 ===== -->
+    <rect x="32" y="442" width="1152" height="84" fill="#ffffff"/>
+    <g transform="translate(330,466)" style="color:#2f6bf6">
+      <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 2l11 6.5v13L15 28 4 21.5v-13z"/><path d="M4 8.5l11 6.5 11-6.5M15 15v13"/>
+      </g>
+    </g>
+    <text x="608" y="478" text-anchor="middle" fill="#111111" font-size="15">MaaS (Model as a Service) · DashScope</text>
+    <text x="608" y="499" text-anchor="middle" fill="#374151" font-size="13">LLM (Large Language Model) · Tongyi Qianwen (Qwen) · Model Studio</text>
+
+    <!-- MaaS → 底部两盒 -->
+    <line x1="312" y1="526" x2="312" y2="556" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+    <line x1="904" y1="526" x2="904" y2="556" stroke="#4b5563" stroke-width="1" marker-end="url(#ah)"/>
+
+    <!-- ===== 底部两盒 ===== -->
+    <rect x="32" y="564" width="560" height="118" fill="#ffffff"/>
+    <g transform="translate(60,590)" style="color:#2f6bf6">
+      <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="4" width="14" height="18" rx="1"/><rect x="7" y="1" width="14" height="18" rx="1" fill="#ffffff"/><line x1="11" y1="8" x2="17" y2="8"/><line x1="11" y1="12" x2="17" y2="12"/>
+      </g>
+    </g>
+    <text x="312" y="600" text-anchor="middle" fill="#111111" font-size="15">视觉识别(VLM) · Qwen-VL-Plus</text>
+    <text x="312" y="620" text-anchor="middle" fill="#64748b" font-size="12">Vision-Language Model</text>
+    <text x="312" y="641" text-anchor="middle" fill="#374151" font-size="14">拍照 / 上传 → Base64 推理</text>
+
+    <rect x="624" y="564" width="560" height="118" fill="#ffffff"/>
+    <g transform="translate(651,590)" style="color:#2f6bf6">
+      <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 2l9 5v10l-9 5-9-5V7z"/><path d="M15 8l5 3v6l-5 3-5-3V11z"/>
+      </g>
+    </g>
+    <text x="904" y="600" text-anchor="middle" fill="#111111" font-size="15">语音识别(ASR) · Qwen3.5-Omni-Flash</text>
+    <text x="904" y="620" text-anchor="middle" fill="#64748b" font-size="12">Automatic Speech Recognition</text>
+    <text x="904" y="641" text-anchor="middle" fill="#374151" font-size="14">边说边显示 + 后端多格式音频校准</text>
+  </svg>
+</div>
+
+<!-- <div class="diagram-wrapper">
+  <div class="section-title"><span class="dot" style="background:#2f6bf6"></span>新逻辑 · 路由与鉴权划分</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 14px;">
+      <div style="font-weight:700;margin-bottom:6px;">学生端 · /（免登录，公开路由）</div>
+      <ul style="padding-left:18px;color:#1f2937;">
+        <li>只能 AI 识别录入：拍照 / 上传识别、语音录入、手动填写表单，核对后提交</li>
+        <li>提交即新建入库，无需鉴权；不可看列表、不可改删</li>
+        <li style="color:#b91c1c;">无导出功能（无入口、无接口权限）</li>
+        <li>开放接口：POST /api/recognize、POST /api/voice-recognize、POST /api/students</li>
+      </ul>
+    </div>
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;">
+      <div style="font-weight:700;margin-bottom:6px;">管理端 · /manager/login → /manager（管理员登录，JWT）</div>
+      <ul style="padding-left:18px;color:#1f2937;">
+        <li>录入：AI 识别录入 + 手工录入</li>
+        <li>管理：全量数据改删查（GET /api/students、PUT / DELETE /api/students/[id]，均需 withAdmin）</li>
+        <li style="font-weight:700;">导出（管理员专属）：GET /api/export（withAdmin）→ ExcelJS 生成 .xlsx，前端 StudentTable 导出按钮仅管理端渲染、经 authFetch 携带 JWT 调用</li>
+      </ul>
+    </div>
+  </div>
+  <p style="font-size:12px;color:#64748b;margin-top:8px;">Service 规则：公开提交免鉴权但仍做校验 / 敏感词拦截；管理接口统一 JWT 鉴权（401 未登录、403 非管理员）。/manager 非管理员回 /，未登录去 /manager/login。</p>
+</div> -->
+
+
+</div>
+</div>
+
+</body>
+</html>

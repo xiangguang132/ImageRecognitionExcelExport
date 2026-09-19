@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学生证识别系统 — 技术栈分层图</title>
+<style>
+.pic{width:40px;height:40px}
+.gi .pic{width:38px;height:38px}
+.db .pic{width:32px;height:32px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#e3ead1;font-family:-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;padding:8px;min-height:100vh;color:#1e293b}
+.page{background:#fff;border-radius:22px;overflow:hidden;max-width:1800px;margin:0 auto;zoom:.8}
+.browser{display:flex;align-items:center;gap:14px;background:#f3f4f6;padding:10px 22px}
+.browser .sk{background:#e2e3e7;border-radius:6px}
+.browser .left .sk{height:14px}.browser .left .sk:first-child{width:150px;margin-bottom:8px}.browser .left .sk:last-child{width:90px}
+.browser .mid{flex:1;display:flex;justify-content:center;gap:12px}.browser .mid .sk{width:44px;height:36px;border-radius:8px}
+.browser .right{display:flex;align-items:center;gap:0}.browser .right i{width:44px;height:44px;border-radius:50%;background:#ddd;display:block;margin-left:-10px;border:3px solid #f3f4f6}.browser .right .sk{width:96px;height:38px;border-radius:10px;margin-left:46px}
+h1{text-align:center;font-size:21px;margin:10px 0 2px}
+.sub{text-align:center;color:#1e293b;font-size:14px}
+.nav{text-align:center;margin:4px 0 8px;font-size:14px;color:#1e293b}.nav a{color:#1d4ed8;text-decoration:none}
+.canvas{display:flex;gap:12px;padding:6px 26px 14px;align-items:stretch}
+/* 左纵轨 */
+.rail{width:80px;background:#eaf2ff;border:1px solid #c9dcfa;border-radius:6px;display:flex;flex-direction:column;padding:8px 10px;gap:8px}
+.rail .rz{flex:1;display:flex;align-items:center;justify-content:center}
+.rail .rz span{background:#d9e7fd;border-radius:6px;font-size:19px;font-weight:700;padding:14px 10px;white-space:nowrap;writing-mode:vertical-rl;letter-spacing:6px}
+.rail .r-display{flex:0 0 150px}.rail .r-gateway{flex:0 0 110px}.rail .r-service{flex:1}.rail .r-data{flex:0 0 165px}
+.main{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.band{border:1px dashed #9db6d8;border-radius:6px;padding:8px 10px 10px;position:relative}
+.band>.bt{font-size:17px;font-weight:700;margin-bottom:8px}
+.b-display{background:#e6e6f8;border-color:#b9bde0}
+.b-gateway{background:#e9f6f6;border-color:#a9d3d4}
+.b-service-wrap{border:1px dashed #8a8a8a;border-radius:6px;padding:8px;display:grid;grid-template-columns:88px 1fr 88px;gap:8px;background:#fff}
+.b-data{background:#e4f2f0;border-color:#a9d3d4}
+.drow{display:grid;gap:8px}
+.drow.cols3{grid-template-columns:1fr 1fr 1fr}
+.drow.cols5{grid-template-columns:repeat(5,1fr)}
+.dgroup{border:1px dashed #8a8a8a;border-radius:6px;padding:5px;display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.55);min-width:0;overflow:hidden}
+.dgroup .icon{font-size:26px;line-height:1;flex-shrink:0;width:46px;text-align:center}
+.dgroup .icon small{display:block;font-size:13px;font-weight:700;margin-top:4px;color:#0f172a}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1;min-width:0}
+.chips.c1{grid-template-columns:1fr}.chips.c3{grid-template-columns:1fr 1fr 1fr}
+.chip{background:#a3a8d8;color:#0b0e26;font-weight:600;font-size:13px;text-align:center;padding:5px 4px;border-radius:4px;white-space:normal;word-break:break-word;line-height:1.3;min-width:0}
+.b-gateway .chip{background:#a9d8e8;color:#06222e;font-weight:600}
+.b-gateway .gcol{text-align:center}
+.b-gateway .gcol .gi{font-size:26px}
+.b-gateway .gcol .gc{font-size:14px;margin-top:4px}
+.b-gateway .gcol .ip{font-size:12px;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 6px;margin:1px 0}
+.sub-band{border:1px dashed #9db6d8;border-radius:6px;padding:6px 8px;margin-bottom:8px}
+.sub-band:last-child{margin-bottom:0}
+.sub-band>.st{font-size:14px;margin-bottom:6px}
+.sb-auth{background:#e3ecfa}.sb-comp{background:#eef7e4}.sb-base{background:#e6f4f4}.sb-access{background:#e6f4f4}
+.grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.grid6 .chip{background:#b9d3b9;color:#0e2a0e;font-weight:600}
+.sb-auth .chip{background:#a9c2e8;color:#0b1e3d;font-weight:600}
+.sb-base .chip,.sb-access .chip{background:#7fd4d4;color:#04302f;font-weight:600}
+.side{background:#fdf3e0;border:1px dashed #d8c49a;border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:8px}
+.side.right{background:#fde6ee;border-color:#d8a9bd}
+.side .st{font-size:14px;font-weight:700;text-align:center}
+.side .sc{background:#f5c98a;border-radius:6px;font-size:13px;text-align:center;padding:6px 2px;line-height:1.3}
+.side.right .sc{background:#f2a9c4;color:#5b1030}
+.conn{display:flex;align-items:center;justify-content:center;gap:14px;color:#1565d8;font-weight:600;font-size:13px;padding:1px 0}
+.conn .arw{font-size:16px;line-height:1}
+.data-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:8px}
+.dbs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.db{border:1px dashed #8a8a8a;border-radius:6px;text-align:center;padding:4px 2px;font-size:19px;background:#fff}
+.db small{display:block;font-size:12px;margin-top:2px;color:#0f172a;font-weight:600}
+.dright{display:flex;flex-direction:column;gap:6px}
+.dr{border:1px dashed #8a8a8a;border-radius:6px;padding:5px 6px;display:flex;align-items:center;gap:6px;font-size:13px;background:rgba(255,255,255,.5)}
+.dr b{flex-shrink:0;font-weight:600}
+.dr .chip{background:#d7dbe0;color:#111;font-weight:600;flex:1}
+.footer{text-align:center;color:#1e293b;font-size:12px;padding:8px;border-top:1px solid #eee}
+@media(max-width:1000px){.canvas{flex-direction:column}.rail{width:100%;flex-direction:row}.b-service-wrap{grid-template-columns:1fr}.data-grid{grid-template-columns:1fr}.drow.cols3,.drow.cols5,.grid6{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="p-web" viewBox="0 0 48 48"><rect x="4" y="6" width="40" height="26" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/><path d="M10 22l6-6 5 5 7-8 10 9" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="18" y="36" width="12" height="3" rx="1.5" fill="#3b82f6"/><rect x="12" y="41" width="24" height="2.5" rx="1.2" fill="#93c5fd"/></symbol>
+<symbol id="p-screen" viewBox="0 0 48 48"><rect x="8" y="10" width="32" height="20" rx="6" fill="#f59e0b" stroke="#ea580c" stroke-width="2"/><rect x="13" y="14" width="22" height="12" rx="3" fill="#fff7ed"/><text x="24" y="23.5" font-size="8" font-weight="800" text-anchor="middle" fill="#ea580c">DLP</text><rect x="20" y="32" width="8" height="5" fill="#ea580c"/><rect x="14" y="38" width="20" height="2.5" rx="1.2" fill="#fdba74"/></symbol>
+<symbol id="p-phone" viewBox="0 0 48 48"><rect x="14" y="4" width="20" height="40" rx="4" fill="#ccfbf1" stroke="#14b8a6" stroke-width="2"/><rect x="18" y="10" width="12" height="22" rx="1.5" fill="#99f6e4"/><circle cx="24" cy="38" r="2" fill="#14b8a6"/></symbol>
+<symbol id="p-gw" viewBox="0 0 48 48"><ellipse cx="24" cy="24" rx="16" ry="13" fill="#fb923c" stroke="#ea580c" stroke-width="2"/><path d="M12 20h13M12 24h16M12 28h13" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M29 18l7 6-7 6" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="p-shield" viewBox="0 0 48 48"><path d="M24 4l14 6v10c0 10-6.5 16-14 19C16.5 36 10 30 10 20V10z" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/><path d="M17 22l5 5 9-10" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="p-lock" viewBox="0 0 48 48"><rect x="10" y="20" width="28" height="22" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/><path d="M16 20v-5a8 8 0 0 1 16 0v5" fill="none" stroke="#3b82f6" stroke-width="2.5"/><circle cx="24" cy="31" r="3" fill="#3b82f6"/></symbol>
+<symbol id="p-share" viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="9" fill="#e0f2fe" stroke="#38bdf8" stroke-width="2"/><circle cx="24" cy="14" r="4" fill="#38bdf8"/><circle cx="14" cy="30" r="4" fill="#38bdf8"/><circle cx="34" cy="30" r="4" fill="#38bdf8"/><path d="M20 17l-3 8M28 17l3 8M18 30h12" stroke="#0284c7" stroke-width="2"/></symbol>
+<symbol id="p-mysql" viewBox="0 0 48 48"><ellipse cx="24" cy="10" rx="14" ry="6" fill="#bae6fd" stroke="#0284c7" stroke-width="2"/><path d="M10 10v26c0 3.3 6.3 6 14 6s14-2.7 14-6V10" fill="#7dd3fc" stroke="#0284c7" stroke-width="2"/><path d="M10 23c0 3.3 6.3 6 14 6s14-2.7 14-6" fill="none" stroke="#0284c7" stroke-width="2"/></symbol>
+<symbol id="p-hbase" viewBox="0 0 48 48"><ellipse cx="24" cy="10" rx="13" ry="5.5" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2"/><path d="M11 10v26c0 3 5.8 5.5 13 5.5s13-2.5 13-5.5V10" fill="#93c5fd" stroke="#3b82f6" stroke-width="2"/></symbol>
+<symbol id="p-hive" viewBox="0 0 48 48"><ellipse cx="24" cy="10" rx="13" ry="5.5" fill="#fde68a" stroke="#d97706" stroke-width="2"/><path d="M11 10v26c0 3 5.8 5.5 13 5.5s13-2.5 13-5.5V10" fill="#fcd34d" stroke="#d97706" stroke-width="2"/></symbol>
+<symbol id="p-redis" viewBox="0 0 48 48"><path d="M24 5l16 8-16 8-16-8z" fill="#fca5a5" stroke="#dc2626" stroke-width="2" stroke-linejoin="round"/><path d="M8 21l16 8 16-8M8 29l16 8 16-8" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round"/></symbol>
+<symbol id="p-mq" viewBox="0 0 48 48"><rect x="8" y="14" width="10" height="26" rx="2" fill="#fdba74" stroke="#ea580c" stroke-width="2"/><rect x="20" y="6" width="10" height="34" rx="2" fill="#fb923c" stroke="#ea580c" stroke-width="2"/><circle cx="13" cy="27" r="2.5" fill="#fff"/><circle cx="25" cy="23" r="2.5" fill="#fff"/></symbol>
+<symbol id="p-es" viewBox="0 0 48 48"><circle cx="24" cy="24" r="17" fill="#fed7aa" stroke="#ea580c" stroke-width="2"/><path d="M10 20h28M10 26h28M18 12c4 8 4 16 0 24M30 12c-4 8-4 16 0 24" stroke="#ea580c" stroke-width="2" fill="none"/></symbol>
+</defs></svg>
+<div class="page">
+<!-- <div class="browser"><div class="left"><div class="sk"></div><div class="sk"></div></div><div class="mid"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div><div class="right"><i></i><i></i><i></i><div class="sk"></div></div></div>
+<h1>学生证识别系统 · 技术栈分层图</h1>
+<p class="sub">Student Card Recognition System — Technology Stack（Next.js 全栈单体）</p>
+<p class="nav"><a href="./application-flow.html">← 应用流程图 · Application Flow</a></p> -->
+<div class="canvas">
+<div class="rail">
+<div class="rz r-display"><span>展示层</span></div>
+<div class="rz r-gateway"><span>接入层</span></div>
+<div class="rz r-service"><span>服务层</span></div>
+<div class="rz r-data"><span>数据层</span></div>
+</div>
+<div class="main">
+<!-- 展示端 -->
+<div class="band b-display"><div class="bt">展示端</div>
+<div class="drow cols3">
+<div class="dgroup"><div class="icon"><svg class="pic"><use href="#p-web"/></svg><small>WEB</small></div><div class="chips"><div class="chip">React 19</div><div class="chip">JavaScript</div><div class="chip">TypeScript 5</div><div class="chip">Next.js 16</div></div></div>
+<div class="dgroup"><div class="icon"><svg class="pic"><use href="#p-screen"/></svg><small>识别交互</small></div><div class="chips"><div class="chip">HTML</div><div class="chip">Tailwind 4</div><div class="chip">Modal·Toast</div><div class="chip">拖拽上传·拍照</div></div></div>
+<div class="dgroup"><div class="icon"><svg class="pic"><use href="#p-phone"/></svg><small>语音端</small></div><div class="chips"><div class="chip">Web Speech实时显示</div><div class="chip">录音后qwen校准</div><div class="chip">录音</div><div class="chip">响应式 H5</div></div></div>
+</div></div>
+<div class="conn"><span class="arw">⇅</span><span>HTTP(S)</span><span>RestFull API：JSON数据格式 JWT TOKEN管理</span><span class="arw">⇅</span><span>HTTP(S)</span></div>
+<!-- 网关 -->
+<div class="band b-gateway"><div class="bt">网关</div>
+<div class="drow cols5">
+<div class="gcol"><div class="gi"><svg class="pic"><use href="#p-gw"/></svg></div><div class="gc">API路由<br>Route Handlers</div></div>
+<div class="gcol"><div><div class="ip">auth · students</div><div class="ip">recognize · voice</div><div class="ip">admin · export</div></div><div class="gc">服务路由</div></div>
+<div class="gcol"><div class="gi"><svg class="pic"><use href="#p-shield"/></svg></div><div class="gc">安全策略<br>格式校验·敏感词</div></div>
+<div class="gcol"><div class="gi"><svg class="pic"><use href="#p-lock"/></svg></div><div class="gc">访问认证<br>JWT · bcrypt</div></div>
+<div class="gcol"><div class="gi"><svg class="pic"><use href="#p-share"/></svg></div><div class="gc">Token透传<br>authFetch</div></div>
+</div></div>
+<div class="conn"><span class="arw">⇅</span><span>HTTP(S)</span><span style="flex:1"></span><span class="arw">⇅</span><span>HTTP(S)</span></div>
+<!-- 服务层 -->
+<div style="display:flex;gap:6px;font-size:14px;font-weight:700"><span>开发与运维</span><span style="flex:1"></span><span>配置与调用</span></div>
+<div class="b-service-wrap">
+<div class="side"><div class="sc">ESLint<br>代码规范</div><div class="sc">Next Dev<br>本地联调</div><div class="sc">Console<br>日志输出</div><div class="sc">Admin<br>用户/数据管理</div></div>
+<div>
+<div class="sub-band sb-auth"><div class="st">认证服务</div><div class="drow cols3"><div class="chip">API访问认证</div><div class="chip">身份认证 JWT 24h</div><div class="chip">权限认证 withAdmin</div></div></div>
+<div class="sub-band sb-comp"><div class="st">组件服务</div><div class="grid6"><div class="chip">Next.js 16</div><div class="chip">React 19</div><div class="chip">AuthContext</div><div class="chip">Node.js</div><div class="chip">Prisma 5</div><div class="chip">ExcelJS</div><div class="chip">qwen-vl-plus</div><div class="chip">qwen3.5-omni-flash</div><div class="chip">Web Speech</div><div class="chip">useConfirm</div><div class="chip">bcrypt</div><div class="chip">…</div></div></div>
+<div class="sub-band sb-base"><div class="st">基础能力</div><div class="grid6"><div class="chip">鉴权服务</div><div class="chip">识别服务</div><div class="chip">语音服务</div><div class="chip">学生服务</div><div class="chip">用户服务</div><div class="chip">导出服务</div></div></div>
+<div class="conn"><span class="arw">⇅</span><span>REST API → Prisma ORM → SQLite</span><span class="arw">⇅</span></div>
+<div class="sub-band sb-access"><div class="st">数据访问</div><div class="grid6"><div class="chip">关系查询</div><div class="chip">ORM访问</div><div class="chip">分页查询</div><div class="chip">软删除过滤</div><div class="chip">Excel导出</div><div class="chip">Base64载体</div></div></div>
+</div>
+<div class="side right"><div class="sc">npm<br>依赖管理</div><div class="sc">Prisma Migrate<br>迁移管理</div><div class="sc">.env<br>统一配置</div><div class="sc">authFetch<br>请求封装</div><div class="sc">Node<br>单体运行</div></div>
+</div>
+<div class="conn"><span class="arw">⇅</span><span style="flex:1"></span><span class="arw">⇅</span></div>
+<!-- 数据 -->
+<div class="band b-data"><div class="bt">数据管理</div>
+<div class="data-grid">
+<div class="dbs">
+<div class="db"><svg class="pic"><use href="#p-mysql"/></svg><small>SQLite<br>关系型</small></div>
+<div class="db"><svg class="pic"><use href="#p-hbase"/></svg><small>Prisma<br>ORM映射</small></div>
+<div class="db"><svg class="pic"><use href="#p-hive"/></svg><small>软删除<br>isDel标记</small></div>
+<div class="db"><svg class="pic"><use href="#p-redis"/></svg><small>ExcelJS<br>7列导出</small></div>
+<div class="db"><svg class="pic"><use href="#p-mq"/></svg><small>音频Blob<br>FormData传输</small></div>
+<div class="db"><svg class="pic"><use href="#p-es"/></svg><small>Base64<br>图文音频载体</small></div>
+</div>
+<div class="dright">
+<div class="dr"><b>数据分析</b><span class="chip">qwen-vl-plus</span><span class="chip">qwen3.5-omni-flash</span><span class="chip">7列导出</span><span class="chip">…</span></div>
+<div class="dr"><b>数据治理</b><span class="chip">格式校验</span><span class="chip">敏感词拦截 + 审核</span></div>
+<div class="dr"><b>数据采集</b><span class="chip">拍照·拖拽上传</span><span class="chip">录音 + 边说边显示 + 后端转写</span></div>
+</div>
+</div></div>
+</div>
+</div>
+</div>
+</body>
+</html>
