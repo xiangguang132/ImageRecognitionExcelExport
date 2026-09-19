@@ -3,8 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { validateStudentInput } from '@/lib/validation'
 import { withAdminParams } from '@/lib/auth-middleware'
 
-// 单表说明：见 ../route.ts。密码只能经 /api/auth/change-password 修改，
-// 本接口不接受 password / 权限 role 字段。
+// 单表说明：见 ../route.ts。本接口不接受 password / 权限 role 字段。
 
 function toStudentRow(u: {
   id: number; studentId: string | null; name: string | null; email: string | null;

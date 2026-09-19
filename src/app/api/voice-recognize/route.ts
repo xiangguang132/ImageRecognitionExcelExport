@@ -1,8 +1,7 @@
-import { NextResponse } from 'next/server'
-import { withAuth } from '@/lib/auth-middleware'
+import { NextRequest, NextResponse } from 'next/server'
 
-// POST - 语音识别（已登录用户均可）
-export const POST = withAuth(async (request) => {
+// POST - 语音识别（学生端免登录公开）
+export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('audio') as File
@@ -105,7 +104,7 @@ export const POST = withAuth(async (request) => {
 2. 严格按照以下 JSON 格式返回，不要返回其他内容：
 
 {
-  "studentId": "学号（如 A-C2-0130-1 或 AC201301）",
+  "studentId": "学号（固定8位，前两位为字母，后六位为数字，如 A-C2-0130-1 或 AC201301）",
   "name": "姓名（繁体中文）",
   "major": "专业名称（繁体中文）",
   "role": "角色（如 STUDENT、TEACHER 等）",
@@ -178,4 +177,4 @@ export const POST = withAuth(async (request) => {
       { status: 500 }
     )
   }
-})
+}

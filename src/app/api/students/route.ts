@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateStudentInput } from '@/lib/validation'
 import { hashPassword } from '@/lib/auth'
@@ -10,26 +10,6 @@ import { withAdmin } from '@/lib/auth-middleware'
 
 // 默认初始密码（bcrypt 入库，学生首次登录强制改密）
 const DEFAULT_PASSWORD = '123456'
-
-const RANDOM_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
-
-/**
- * 邮箱碰撞时在 @ 前追加两位随机后缀（数字/字母，如 ac20130@ → ac20130aa@），
- * 最多重试 50 次；返回可用的新邮箱，分配失败返回 null。
- */
-async function resolveEmailWithRandomSuffix(email: string): Promise<string | null> {
-  const at = email.lastIndexOf('@')
-  if (at <= 0) return null
-  const prefix = email.slice(0, at)
-  const domain = email.slice(at)
-  const pick = () => RANDOM_CHARS[Math.floor(Math.random() * RANDOM_CHARS.length)]
-  for (let i = 0; i < 50; i++) {
-    const candidate = `${prefix}${pick()}${pick()}${domain}`
-    const taken = await prisma.user.findUnique({ where: { email: candidate } })
-    if (!taken) return candidate
-  }
-  return null
-}
 
 // 行映射：把 DB 列 identity 以旧契约名 role 返回，前端零改动
 function toStudentRow(u: {
@@ -85,13 +65,9 @@ export const GET = withAdmin(async (request) => {
   }
 })
 
-// POST - 新增学生信息并开通账号（仅管理员）
-// 学生本人更新兴趣信息请走 PUT /api/students/mine（白名单仅两个兴趣字段）。
-// 邮箱沿甲方规则「学号去尾」自动生成；为空或碰撞时：
-// - emailConflict === 'skip'：不存邮箱直接入库
-// - emailConflict === 'suffix'：在 @ 前追加随机字母后入库（最多重试 50 次）
-// - 否则碰撞返回 409 + conflict: true，由前端弹窗让用户二选一
-export const POST = withAdmin(async (request) => {
+// POST - 新增学生信息（学生端免登录公开 + 管理端手工录入共用）
+// 邮箱沿甲方规则「学号去尾」自动生成；为空或已被使用时直接返回错误，由提交方手工修改后重试。
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
@@ -106,9 +82,8 @@ export const POST = withAdmin(async (request) => {
       )
     }
 
-    const emailStrategy = body.emailConflict === 'suffix' ? 'suffix' : null
     let email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : ''
-    // 管理员端邮箱必填：碰撞时要么不提交，要么接受系统追加的两位随机后缀
+    // 邮箱必填：为空或已被使用时直接报错，由提交方手工修改后重试
     if (!email) {
       return NextResponse.json(
         { error: '请填写邮箱' },
@@ -131,7 +106,7 @@ export const POST = withAdmin(async (request) => {
     }
 
     // 邮箱冲突处理（selfId：更新场景下排除自己；新建传 null）
-    // 返回：resolvedEmail（可入库的邮箱，'' 表示不存）或直接返回 Response（409）
+    // 返回：可入库的邮箱，或直接返回 Response（409，由提交方手工修改后重试）
     // 注意：用 findFirst 而不用 findUnique，以便区分占用者是否已被删除
     const resolveEmail = async (selfId: number | null): Promise<string | Response> => {
       if (!email) return ''
@@ -147,19 +122,9 @@ export const POST = withAdmin(async (request) => {
             { status: 409 }
           )
         }
-        if (emailStrategy === 'suffix') {
-          const resolved = await resolveEmailWithRandomSuffix(email)
-          if (!resolved) {
-            return NextResponse.json(
-              { error: '邮箱随机后缀分配失败，请手工修改邮箱后重试', conflict: true },
-              { status: 409 }
-            )
-          }
-          return resolved
-        }
         return NextResponse.json(
           {
-            error: '该邮箱已被使用（可能是学号去尾后相同），要么不提交，要么接受系统追加的两位随机后缀',
+            error: '该邮箱已被使用（可能是学号去尾后相同），请手工修改邮箱后重新提交',
             conflict: true
           },
           { status: 409 }
@@ -247,4 +212,4 @@ export const POST = withAdmin(async (request) => {
       { status: 500 }
     )
   }
-})
+}

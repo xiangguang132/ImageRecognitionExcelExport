@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateToken, getEnvAdmin, getEnvAdminEmail, isSecureRequest } from '@/lib/auth'
 
 // POST - 管理员登录（邮箱 + 密码 → JWT）
-// 管理员为 .env 配置的虚拟账号（id = 0），不在 users 表中落盘；
-// 学生请走 POST /api/auth/login（学号 + 密码），两条链路分离。
+// 管理员为 .env 配置的虚拟账号（id = 0），不在 users 表中落盘。
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

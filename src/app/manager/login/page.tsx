@@ -12,15 +12,19 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { loginAdmin, user, isLoading } = useAuth()
+  const { loginAdmin, user, isLoading, logout } = useAuth()
   const router = useRouter()
+  const isAdmin = user?.role === 'admin'
 
-  // 已登录管理员直接进首页；已登录学生回首页（无权停留在此）
+  // 已登录管理员直接进管理端；若残留学生会话则先退出，避免与 /manager 互跳
   useEffect(() => {
-    if (!isLoading && user) {
-      router.replace('/')
+    if (isLoading) return
+    if (isAdmin) {
+      router.replace('/manager')
+    } else if (user) {
+      logout()
     }
-  }, [user, isLoading, router])
+  }, [user, isAdmin, isLoading, router, logout])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,12 +48,12 @@ export default function AdminLoginPage() {
       toast.error(result.error)
     } else {
       toast.success('登录成功，欢迎回来')
-      router.replace('/')
+      router.replace('/manager')
     }
   }
 
-  // 加载中或已登录，不渲染表单
-  if (isLoading || user) {
+  // 加载中或已登录管理员，不渲染表单（非管理员会被上面 effect 登出，随后看到表单）
+  if (isLoading || isAdmin) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
@@ -170,8 +174,8 @@ export default function AdminLoginPage() {
           © {new Date().getFullYear()} Student ID Recognition System
         </p>
         <p className="text-center text-xs mt-2">
-          <Link href="/login" className="text-indigo-600 hover:text-indigo-800 font-medium">
-            ← 返回学生登录
+          <Link href="/" className="text-indigo-600 hover:text-indigo-800 font-medium">
+            ← 返回学生端
           </Link>
         </p>
       </div>

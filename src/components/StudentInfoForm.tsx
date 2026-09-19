@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { StudentInfo, cleanStudentId, generateEmail, normalizeEmailInput, EMAIL_SUFFIX } from '@/lib/recognize'
+import { STUDENT_ID_RE, EMAIL_PREFIX_MAX_LEN } from '@/lib/validation'
 import { page } from '@/lib/api-path'
 import Modal from '@/components/ui/Modal'
 import { toast } from '@/components/ui/Toast'
@@ -12,8 +13,6 @@ interface StudentInfoFormProps {
   onReset: () => void
   isSubmitting: boolean
   isRecognizing?: boolean
-  /** 学生模式：锁定硬性信息（学号/姓名/角色/邮箱/专业），只能改兴趣字段 */
-  lockIdentity?: boolean
 }
 
 const emptyForm: StudentInfo = {
@@ -26,12 +25,10 @@ const emptyForm: StudentInfo = {
   interestTopic: ''
 }
 
-export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubmitting, isRecognizing = false, lockIdentity = false }: StudentInfoFormProps) {
+export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubmitting, isRecognizing = false }: StudentInfoFormProps) {
   const [formData, setFormData] = useState<StudentInfo>(emptyForm)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
-  // 学生模式：提交前先弹说明弹窗（硬性信息不入库），确认后再弹原确认弹窗
-  const [showNoticeModal, setShowNoticeModal] = useState(false)
 
   // 识别结果变化时同步表单（渲染期调整，避免 effect 内 setState）
   const [prevInitialData, setPrevInitialData] = useState<StudentInfo | null>(initialData)
@@ -87,24 +84,26 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
     e.preventDefault()
 
     // 代码级拦截所有必填字段，统一使用应用内提示，不依赖浏览器原生校验
-    // 学生模式只校验兴趣字段（硬性信息被锁定，来自本人档案预填）
-    if (!lockIdentity) {
-      if (!formData.studentId.trim()) {
-        toast.error('请输入学号')
-        return
-      }
-      if (!formData.name.trim()) {
-        toast.error('请输入姓名')
-        return
-      }
-      if (!formData.role) {
-        toast.error('请选择角色')
-        return
-      }
-      if (!formData.major.trim()) {
-        toast.error('请输入专业')
-        return
-      }
+    if (!formData.studentId.trim()) {
+      toast.error('请输入学号')
+      return
+    }
+    // 学号固定 8 位：前两位字母，后六位数字
+    if (!STUDENT_ID_RE.test(formData.studentId.trim())) {
+      toast.error('学号须为8位：前两位字母，后六位数字（如 AC201301）')
+      return
+    }
+    if (!formData.name.trim()) {
+      toast.error('请输入姓名')
+      return
+    }
+    if (!formData.role) {
+      toast.error('请选择角色')
+      return
+    }
+    if (!formData.major.trim()) {
+      toast.error('请输入专业')
+      return
     }
     if (!formData.interestDirection) {
       toast.error('请至少选择一个未来兴趣方向')
@@ -114,13 +113,18 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
       toast.error('请输入意向主题')
       return
     }
-
-    // 学生模式：先弹说明弹窗，确认后再弹原确认弹窗；管理员直进确认弹窗
-    if (lockIdentity) {
-      setShowNoticeModal(true)
-    } else {
-      setShowConfirmModal(true)
+    // 邮箱 @ 前部分最多 10 位
+    const emailVal = formData.email.trim()
+    if (emailVal && emailVal.includes('@')) {
+      const prefix = emailVal.slice(0, emailVal.indexOf('@'))
+      if (prefix.length > EMAIL_PREFIX_MAX_LEN) {
+        toast.error(`邮箱@前部分最多${EMAIL_PREFIX_MAX_LEN}位字符`)
+        return
+      }
     }
+
+    // 全部字段校验通过后直接进确认弹窗
+    setShowConfirmModal(true)
   }
 
   const handleConfirmSubmit = () => {
@@ -143,10 +147,8 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
     { label: '兴趣方向', value: formData.interestDirection },
     { label: '意向主题', value: formData.interestTopic },
   ]
-  // 学生模式确认弹窗只列实际入库的两项，避免误导
-  const visibleSummaryItems = lockIdentity
-    ? summaryItems.filter((item) => item.label === '兴趣方向' || item.label === '意向主题')
-    : summaryItems
+  // 确认弹窗列出全部字段供核对
+  const visibleSummaryItems = summaryItems
 
   return (
     <>
@@ -180,9 +182,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 核对识别结果
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                {lockIdentity
-                  ? '灰色字段由管理员维护，你只能更新下方兴趣信息'
-                  : '请确保所有信息准确无误后再提交'}
+                请确保所有信息准确无误后再提交
               </p>
             </div>
           </div>
@@ -202,11 +202,10 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                   name="studentId"
                   value={formData.studentId}
                   onChange={handleChange}
-                  disabled={lockIdentity}
-                  title={lockIdentity ? '学号由管理员维护' : undefined}
-                  className="w-full pl-2.5 pr-16 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm group-hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                  className="w-full pl-2.5 pr-16 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm group-hover:shadow-md"
                   placeholder="AC201301"
                 />
+                {/* 学号输入占位 */}
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                   自动提取
                 </span>
@@ -226,9 +225,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                disabled={lockIdentity}
-                title={lockIdentity ? '姓名由管理员维护' : undefined}
-                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="请输入姓名"
               />
             </div>
@@ -246,9 +243,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  disabled={lockIdentity}
-                  title={lockIdentity ? '身份角色由管理员维护' : undefined}
-                  className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm appearance-none group-hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                  className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm appearance-none group-hover:shadow-md"
                 >
                   <option value="">请选择角色</option>
                   <option value="student">Student (学生)</option>
@@ -277,9 +272,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                   value={formData.email}
                   onChange={handleChange}
                   onBlur={handleEmailBlur}
-                  disabled={lockIdentity}
-                  title={lockIdentity ? '邮箱由管理员维护' : undefined}
-                  className="w-full pl-2.5 pr-10 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                  className="w-full pl-2.5 pr-10 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                   placeholder="输入学号后自动生成"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-serif italic font-bold text-[10px]">
@@ -301,9 +294,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
                 name="major"
                 value={formData.major}
                 onChange={handleChange}
-                disabled={lockIdentity}
-                title={lockIdentity ? '专业由管理员维护' : undefined}
-                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                className="w-full px-2.5 py-2.5 text-sm bg-white border-2 border-rose-200/50 rounded-lg focus:outline-none focus:ring-3 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-sm hover:shadow-md"
                 placeholder="请输入专业名称"
               />
             </div>
@@ -406,26 +397,6 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
       </form>
 
       <Modal
-        isOpen={showNoticeModal}
-        onClose={() => setShowNoticeModal(false)}
-        onConfirm={() => { setShowNoticeModal(false); setShowConfirmModal(true); }}
-        title="提交说明"
-        confirmText="我知道了，继续提交"
-        cancelText="返回修改"
-      >
-        <div className="space-y-3">
-          <p className="text-slate-600 font-medium text-sm leading-relaxed">
-            本次提交<span className="font-bold text-indigo-700">仅更新「未来兴趣方向」和「意向参与主题」</span>。
-          </p>
-          <p className="text-slate-600 font-medium text-sm leading-relaxed">
-            学号、姓名、身份角色、邮箱、专业等硬性信息由管理员维护，
-            表单中显示的识别结果<span className="font-bold text-slate-900">仅供核对，不会入库</span>；
-            如有误请联系管理员更正。
-          </p>
-        </div>
-      </Modal>
-
-      <Modal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmSubmit}
@@ -440,9 +411,7 @@ export default function StudentInfoForm({ initialData, onSubmit, onReset, isSubm
             </div>
           </div>
           <p className="text-slate-600 font-medium text-center text-sm">
-            {lockIdentity
-              ? '请核对以下兴趣信息，提交后将更新本人档案：'
-              : '请最后核对一次以下信息，提交后将存入数据库：'}
+            请最后核对一次以下信息，提交后将存入数据库：
           </p>
           <div className="grid gap-2 bg-slate-50 p-4 rounded-xl border border-slate-100/50 shadow-inner">
             {visibleSummaryItems.map((item) => (

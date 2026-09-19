@@ -69,8 +69,10 @@ export const SENSITIVE_WORDS: readonly string[] = [
 
 // 姓名：仅允许各类字母（含简繁体汉字、拉丁字母）、·、空格、单引号、连字符
 const NAME_RE = /^[\p{L}\s·'’.\-]+$/u
-// 学号：仅允许字母和数字（前端 cleanStudentId 已统一为大写并去除连字符）
-const STUDENT_ID_RE = /^[A-Za-z0-9]{4,20}$/
+// 学号：固定 8 位，前两位字母，后六位数字（如 AC201301）
+export const STUDENT_ID_RE = /^[A-Za-z]{2}[0-9]{6}$/
+// 邮箱 @ 前部分最多 10 位
+export const EMAIL_PREFIX_MAX_LEN = 10
 // 邮箱：标准邮箱格式
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // 专业：允许中英文字母、数字、空格及常见分隔符
@@ -139,13 +141,20 @@ export function validateStudentInput(input: StudentInput = {}): ValidationResult
   // 学号
   const studentId = toStr(input.studentId)
   if (studentId && !STUDENT_ID_RE.test(studentId)) {
-    fieldErrors.studentId = '学号格式不正确（仅允许字母和数字，长度为 4~20 位）'
+    fieldErrors.studentId = '学号须为8位：前两位字母，后六位数字（如 AC201301）'
   }
 
   // 邮箱
   const email = toStr(input.email)
-  if (email && !EMAIL_RE.test(email)) {
-    fieldErrors.email = '邮箱格式不正确'
+  if (email) {
+    if (!EMAIL_RE.test(email)) {
+      fieldErrors.email = '邮箱格式不正确'
+    } else {
+      const prefix = email.slice(0, email.indexOf('@'))
+      if (prefix.length > EMAIL_PREFIX_MAX_LEN) {
+        fieldErrors.email = `邮箱@前部分最多${EMAIL_PREFIX_MAX_LEN}位字符`
+      }
+    }
   }
 
   // 专业

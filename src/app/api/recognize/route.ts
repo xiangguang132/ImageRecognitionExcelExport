@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import sharp from 'sharp'
-import { withAuth } from '@/lib/auth-middleware'
 
-// POST - 图片识别（已登录用户均可）
-export const POST = withAuth(async (request) => {
+// POST - 图片识别（学生端免登录公开）
+export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('image') as File
@@ -106,7 +105,7 @@ export const POST = withAuth(async (request) => {
 2. 严格按照以下 JSON 格式返回，不要返回其他内容：
 
 {
-  "studentId": "学号原始内容（保留图片上的原始格式，如 A-C2-0130-1）",
+  "studentId": "学号原始内容（固定8位，前两位为字母，后六位为数字；保留图片上的原始格式，如 A-C2-0130-1）",
   "name": "姓名（繁体中文）",
   "role": "角色（如 STUDENT、TEACHER 等，保持图片上的原文）"
 }
@@ -172,4 +171,4 @@ export const POST = withAuth(async (request) => {
       { status: 500 }
     )
   }
-})
+}

@@ -8,7 +8,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
-import { api, page } from '@/lib/api-path'
+import { api } from '@/lib/api-path'
 
 export interface AuthUser {
   id: number
@@ -21,20 +21,16 @@ export interface AuthUser {
 
 interface LoginResult {
   error?: string
-  mustChangePassword?: number
 }
 
 interface AuthContextType {
   user: AuthUser | null
   token: string | null
   isLoading: boolean
-  /** 学生登录：学号 + 密码 → POST /api/auth/login */
-  loginStudent: (studentId: string, password: string) => Promise<LoginResult>
   /** 管理员登录：邮箱 + 密码 → POST /api/auth/admin-login */
   loginAdmin: (email: string, password: string) => Promise<LoginResult>
   logout: () => void
   authFetch: (url: string, options?: RequestInit) => Promise<Response>
-  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -44,12 +40,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // 登录代际：初始 /me 请求若在某次登录成功之后才返回，其 401 不能覆盖已登录的用户，
+  // 否则会出现「登录成功跳走又被弹回」的竞态
+  const loginEpochRef = useState(() => ({ value: 0 }))[0]
+
   // 初始化：靠 httpOnly Cookie 恢复会话（不再读 localStorage，防 XSS 盗用）
+  // 注意：该请求可能在用户手动登录之后才返回，此时其 401/失败不能清空已登录态
   useEffect(() => {
+    const epoch = loginEpochRef.value
+    let cancelled = false
     fetch(api('/api/auth/me'), { credentials: 'include' })
       .then(async (res) => {
+        if (cancelled || loginEpochRef.value !== epoch) return
         if (res.ok) {
           const data = await res.json()
+          if (cancelled || loginEpochRef.value !== epoch) return
           setUser(data.user)
         } else {
           setToken(null)
@@ -57,11 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => {
+        if (cancelled || loginEpochRef.value !== epoch) return
         setToken(null)
         setUser(null)
       })
-      .finally(() => setIsLoading(false))
-  }, [])
+      .finally(() => {
+        if (!cancelled && loginEpochRef.value === epoch) setIsLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [loginEpochRef])
 
   const doLogin = useCallback(async (url: string, body: Record<string, string>) => {
     try {
@@ -80,18 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Token 已由服务端写入 httpOnly Cookie；内存中保留一份用于 Authorization header 兜底，
       // 不再写入 localStorage。刷新页面后靠 Cookie 会话恢复。
+      loginEpochRef.value += 1
       setToken(data.token ?? null)
       setUser(data.user)
-      return { mustChangePassword: data.user?.mustChangePassword ?? 0 }
+      return {}
     } catch {
       return { error: '网络错误，请重试' }
     }
-  }, [])
-
-  const loginStudent = useCallback(
-    (studentId: string, password: string) => doLogin('/api/auth/login', { studentId, password }),
-    [doLogin]
-  )
+  }, [loginEpochRef])
 
   const loginAdmin = useCallback(
     (email: string, password: string) => doLogin('/api/auth/admin-login', { email, password }),
@@ -106,43 +111,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // 带认证的 fetch 封装（Cookie 自动随 same-origin 请求发送，内存 token 做 header 兜底）
-  // 服务端强制改密（403 + mustChangePassword）时直接跳改密页
   const authFetch = useCallback(async (url: string, options: RequestInit = {}): Promise<Response> => {
     const headers = new Headers(options.headers)
     if (token) {
       headers.set('Authorization', `Bearer ${token}`)
     }
-    const response = await fetch(api(url), { ...options, headers, credentials: 'include' })
-    if (response.status === 403 && !url.includes('/api/auth/')) {
-      try {
-        const body = await response.clone().json()
-        if (body?.mustChangePassword === 1 && typeof window !== 'undefined') {
-          window.location.replace(page('/change-password'))
-        }
-      } catch { /* 非 JSON 直接忽略 */ }
-    }
-    return response
-  }, [token])
-
-  // 刷新当前用户信息
-  const refreshUser = useCallback(async () => {
-    try {
-      const headers = new Headers()
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`)
-      }
-      const res = await fetch(api('/api/auth/me'), { headers, credentials: 'include' })
-      if (res.ok) {
-        const data = await res.json()
-        setUser(data.user)
-      }
-    } catch {
-      // ignore
-    }
+    return fetch(api(url), { ...options, headers, credentials: 'include' })
   }, [token])
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, loginStudent, loginAdmin, logout, authFetch, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, loginAdmin, logout, authFetch }}>
       {children}
     </AuthContext.Provider>
   )
